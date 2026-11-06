@@ -1,0 +1,60 @@
+Panels:
+- Class: rviz_common/Displays
+  Name: Displays
+Visualization Manager:
+  Global Options:
+    Fixed Frame: world
+    Background Color: 35; 38; 44
+  Displays:
+  - Class: rviz_default_plugins/Grid
+    Name: Grid
+    Enabled: true
+    Cell Size: 0.1
+  - Class: rviz_default_plugins/RobotModel
+    Name: MoveIt collision boxes
+    Enabled: true
+    Alpha: 0.55
+    Visual Enabled: false
+    Collision Enabled: true
+    Description Source: Topic
+    Description Topic:
+      Value: /moveit_box_demo/robot_description
+      Durability Policy: Transient Local
+      Reliability Policy: Reliable
+      Depth: 1
+  - Class: rviz_default_plugins/RobotModel
+    Name: Original shell
+    Enabled: true
+    Alpha: 0.3
+    Visual Enabled: true
+    Collision Enabled: false
+    Description Source: Topic
+    Description Topic:
+      Value: /moveit_box_demo/robot_description
+      Durability Policy: Transient Local
+      Reliability Policy: Reliable
+      Depth: 1
+  - Class: rviz_default_plugins/Marker
+    Name: MoveIt collision status
+    Enabled: true
+    Marker Topic:
+      Value: /moveit_guard/marker
+      Reliability Policy: Reliable
+      Depth: 10
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 1.5
+      Pitch: 0.45
+      Yaw: 0.8
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 0.2
+      Target Frame: world
+Window Geometry:
+  Width: 1200
+  Height: 800
