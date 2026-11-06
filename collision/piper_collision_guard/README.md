@@ -30,7 +30,7 @@ ROS2 Humble 환경의 Python 3.10과 Pinocchio가 필요합니다. 아래는 시
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/Robocup-Home-2027_VLA_Tutorial
+cd ~/Robocup-Home-2027_VLA_Tutorial/collision
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 python -m pip install pin==2.7.0 scipy==1.10.1

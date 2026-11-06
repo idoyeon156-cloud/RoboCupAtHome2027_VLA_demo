@@ -9,7 +9,7 @@ ROS2 Humble / MoveIt FCL로 **왼팔과 오른팔 사이**의 부피 충돌을 �
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/Robocup-Home-2027_VLA_Tutorial
+cd ~/Robocup-Home-2027_VLA_Tutorial/collision
 source .venv/bin/activate
 # MoveIt이 없다면 설치:
 # sudo apt install ros-humble-moveit

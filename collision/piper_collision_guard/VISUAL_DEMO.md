@@ -21,7 +21,7 @@
 source /opt/ros/humble/setup.bash
 cd ~
 git clone https://github.com/idoyeon156-cloud/Robocup-Home-2027_VLA_Tutorial.git
-cd Robocup-Home-2027_VLA_Tutorial
+cd Robocup-Home-2027_VLA_Tutorial/collision
 sudo apt update
 sudo apt install python3-venv ros-humble-rviz2 ros-humble-robot-state-publisher ros-humble-joint-state-publisher-gui
 python3 -m venv --system-site-packages .venv
@@ -36,7 +36,7 @@ python /usr/bin/colcon build --symlink-install --packages-select piper_dual_desc
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/Robocup-Home-2027_VLA_Tutorial
+cd ~/Robocup-Home-2027_VLA_Tutorial/collision
 source .venv/bin/activate
 export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
@@ -50,7 +50,7 @@ RViz와 슬라이더 창이 열립니다.
 가장 간단한 방법:
 
 ```bash
-cd "$HOME/문서/ChatGPT/VLA 공부/Robocup-Home-2027_VLA_Tutorial"
+cd "$HOME/문서/ChatGPT/VLA 공부/Robocup-Home-2027_VLA_Tutorial/collision"
 bash run_collision_visual_demo.sh
 ```
 
@@ -58,7 +58,7 @@ bash run_collision_visual_demo.sh
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd "$HOME/문서/ChatGPT/VLA 공부/Robocup-Home-2027_VLA_Tutorial"
+cd "$HOME/문서/ChatGPT/VLA 공부/Robocup-Home-2027_VLA_Tutorial/collision"
 source "$HOME/piper_vla_env/bin/activate"
 export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash

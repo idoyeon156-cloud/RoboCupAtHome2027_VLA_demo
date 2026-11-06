@@ -14,9 +14,13 @@ def main():
     out = Path(parser.parse_args().output)
     out.mkdir(parents=True, exist_ok=True)
     version = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', version,
-        'piper_dual_description', 'piper_collision_guard', 'run_collision_visual_demo.sh',
-        'tools/generate_collision_boxes.py', 'tools/generate_protection_spheres.py'], cwd=ROOT, text=True).splitlines()
+    source_prefix = ROOT.name + '/'
+    paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', version, '--',
+        *[source_prefix + path for path in (
+            'piper_dual_description', 'piper_collision_guard', 'run_collision_visual_demo.sh',
+            'tools/generate_collision_boxes.py', 'tools/generate_protection_spheres.py')]],
+        cwd=ROOT.parent, text=True).splitlines()
+    paths = [path.removeprefix(source_prefix) for path in paths]
     for filename, demo in [('dual_piper_collision_visual_demo.zip', True),
                            ('dual_piper_real_robot_guard_prototype.zip', False)]:
         prefix = 'Robocup-Home-2027_VLA_Tutorial/'
@@ -24,12 +28,12 @@ def main():
             for path in paths:
                 if not demo and (path == 'run_collision_visual_demo.sh' or path.endswith(('degree_gui.py', 'box_editor.py', 'box_tuning.py', 'VISUAL_DEMO.md', 'collision_limit_visual_demo.launch.py', 'collision_limit_visual_demo.rviz'))):
                     continue
-                content = subprocess.check_output(['git', 'show', f'{version}:{path}'], cwd=ROOT)
+                content = subprocess.check_output(['git', 'show', f'{version}:{source_prefix}{path}'], cwd=ROOT)
                 if not demo and path.endswith('/setup.py'):
                     text = content.decode().replace(', "VISUAL_DEMO.md"', '')
                     content = ('\n'.join(line for line in text.splitlines() if not any(entry in line for entry in ['collision_degree_sliders =', 'collision_limit_visual_demo =', 'moveit_box_editor =']))+'\n').encode()
                 if path == 'piper_collision_guard/README.md':
-                    text = content.decode().replace('../piper_moveit_guard/README.md', 'https://github.com/idoyeon156-cloud/Robocup-Home-2027_VLA_Tutorial/blob/main/piper_moveit_guard/README.md')
+                    text = content.decode().replace('../piper_moveit_guard/README.md', 'https://github.com/idoyeon156-cloud/Robocup-Home-2027_VLA_Tutorial/blob/main/collision/piper_moveit_guard/README.md')
                     if not demo:
                         text = '\n'.join(line for line in text.splitlines() if 'VISUAL_DEMO.md' not in line)
                     content = text.encode()
