@@ -22,7 +22,7 @@ def test_visual_demo_launch_uses_updated_spacing_and_only_simulation_topics(gui)
     from tf2_ros import Buffer, TransformListener
     from visualization_msgs.msg import MarkerArray
 
-    assert os.environ.get('ROS_DOMAIN_ID') == '178'
+    assert os.environ.get('ROS_DOMAIN_ID') == os.environ.get('VISUAL_DEMO_TEST_DOMAIN_ID', '178')
     rclpy.init(args=[])
     observer = Node('visual_demo_test_observer')
     buffer = Buffer()

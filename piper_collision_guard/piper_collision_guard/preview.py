@@ -61,8 +61,9 @@ class PreviewState:
             self.path_gap = c.distance
             self.blocked = c.distance <= self.stop
             self.reason = "distance_limit" if self.blocked else "clear"
-        except ValueError:
-            self.blocked, self.reason = True, "path_sampling_budget"
+        except ValueError as error:
+            self.blocked = True
+            self.reason = 'path_sampling_budget' if 'sampling budget' in str(error) else f'invalid_path: {error}'
             self.path_gap = None
         if not self.block_unsafe or not self.blocked:
             self.accepted = q.copy()

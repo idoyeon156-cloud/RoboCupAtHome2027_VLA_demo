@@ -105,9 +105,13 @@ class DistanceModel:
             if values.shape != (6,) or not np.isfinite(values).all():
                 raise ValueError("each arm needs six finite joint angles in radians")
             indices = self.slots[side]
-            if np.any(values < self.model.lowerPositionLimit[indices]) or np.any(values > self.model.upperPositionLimit[indices]):
+            lower = self.model.lowerPositionLimit[indices]
+            upper = self.model.upperPositionLimit[indices]
+            # Linear interpolation at a limit can differ by one floating-point
+            # ULP. Accept only numerical roundoff, never a real out-of-range pose.
+            if np.any(values < lower - 1e-10) or np.any(values > upper + 1e-10):
                 raise ValueError(f"{side} joint angle outside URDF bounds")
-            q[indices] = values
+            q[indices] = np.clip(values, lower, upper)
         return q
 
     def points(self, left, right):

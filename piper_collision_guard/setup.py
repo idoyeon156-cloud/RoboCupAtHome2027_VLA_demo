@@ -18,6 +18,7 @@ setup(
     description="Pinocchio point-distance monitor and position-command gate for dual Piper",
     license="MIT",
     entry_points={"console_scripts": [
+        "collision_degree_sliders = piper_collision_guard.degree_gui:main",
         "collision_guard = piper_collision_guard.node:main",
         "collision_limit_visual_demo = piper_collision_guard.preview:main",
     ]},

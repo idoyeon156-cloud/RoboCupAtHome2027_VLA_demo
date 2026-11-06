@@ -19,7 +19,7 @@ def demo_nodes(context):
     description = placed_description(robot, separation, mesh_root=robot.parents[1])
     common = {'robot_description': description, 'rate': 20}
     return [
-        Node(package='joint_state_publisher_gui', executable='joint_state_publisher_gui',
+        Node(package='piper_collision_guard', executable='collision_degree_sliders',
              name='collision_demo_sliders', parameters=[common],
              remappings=[('joint_states', '/collision_preview/slider_joint_states'),
                          ('robot_description', '/collision_preview/accepted/robot_description')],

@@ -79,6 +79,16 @@ def test_invalid_model_configuration_and_sampling_budget_fail_closed():
         fk.path_clearance(np.zeros(6), np.zeros(6), np.array([1,0,0,0,0,0]), np.zeros(6), .01, 10)
 
 
+def test_limit_interpolation_accepts_roundoff_but_not_real_limit_violation():
+    fk = DistanceModel(URDF)
+    q = np.zeros(6)
+    q[5] = np.nextafter(-2.0944, -np.inf)
+    fk.clearance(q, np.zeros(6))
+    q[5] = -2.094401
+    with pytest.raises(ValueError):
+        fk.clearance(q, np.zeros(6))
+
+
 def test_path_checks_midpoints_even_when_endpoints_are_clear():
     # A robot-independent crossing trajectory tests the actual interpolator:
     # left goes -1 -> +1, right remains at 0. Both endpoints have distance 1.
