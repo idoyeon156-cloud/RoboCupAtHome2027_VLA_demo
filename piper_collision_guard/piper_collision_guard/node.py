@@ -26,10 +26,10 @@ class CollisionGuard(Node):
         default_protection = str(Path(get_package_share_directory("piper_collision_guard")) / "config/protection.yaml")
         defaults = dict(urdf_path=default_urdf, protection_path=default_protection,
                         enforce=False, geometry_confirmed=False, rate_hz=50.0,
-                        stop_clearance_m=0.02, resume_clearance_m=0.04,
+                        stop_clearance_m=0.01, resume_clearance_m=0.04,
                         feedback_timeout_s=0.15, target_timeout_s=0.15,
                         max_arm_skew_s=0.05, path_step_rad=0.02,
-                        max_path_samples=100, link_samples=2,
+                        max_path_samples=100, link_samples=0,
                         driver_speed_ratio=10, gripper_effort_nm=1.0)
         for name, value in defaults.items():
             self.declare_parameter(name, value)

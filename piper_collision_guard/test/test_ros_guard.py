@@ -25,14 +25,14 @@ def test_ros_monitor_and_command_gate():
     # Refuse accidental test execution on the production/default domain.
     assert os.environ.get("ROS_DOMAIN_ID") == "177"
     rclpy.init(args=["--ros-args", "-p", "enforce:=false", "-p", "feedback_timeout_s:=0.5",
-                      "-p", "resume_clearance_m:=0.021", "-p", "target_timeout_s:=0.5", "-p", "max_arm_skew_s:=0.15"])
+                      "-p", "target_timeout_s:=0.5", "-p", "max_arm_skew_s:=0.15"])
     monitor = CollisionGuard()
     assert monitor.outputs == {}
     monitor.destroy_node()
     rclpy.shutdown()
 
     rclpy.init(args=["--ros-args", "-p", "enforce:=true", "-p", "geometry_confirmed:=true", "-p", "feedback_timeout_s:=0.5",
-                      "-p", "resume_clearance_m:=0.021", "-p", "target_timeout_s:=0.5", "-p", "max_arm_skew_s:=0.15"])
+                      "-p", "target_timeout_s:=0.5", "-p", "max_arm_skew_s:=0.15"])
     guard = CollisionGuard()
     fake = Node("fake_piper_no_hardware")
     executor = SingleThreadedExecutor()
@@ -78,7 +78,7 @@ def test_ros_monitor_and_command_gate():
         assert not guard.lock.latched
         assert received["left"][-1].velocity[6] == 10.
 
-        near_left = np.array([np.deg2rad(15), 0., 0., 0., 0., 0.])
+        near_left = np.array([np.deg2rad(18), 0., 0., 0., 0., 0.])
         near_right = np.zeros(6)
         pump(.2, near_left, near_right)
         assert guard.lock.latched and guard.lock.reason == "predicted_distance_stop"

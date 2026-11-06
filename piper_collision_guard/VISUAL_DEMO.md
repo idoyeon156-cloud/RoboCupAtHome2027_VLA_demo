@@ -67,9 +67,9 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 
 이 로컬 사본을 재빌드할 때는 `"$HOME/piper_vla_env/bin/python" /usr/bin/colcon build --symlink-install --packages-select piper_dual_description piper_collision_guard`를 사용합니다. GitHub에서 ~/Robocup-Home-2027_VLA_Tutorial처럼 공백 없는 경로에 새로 clone한 경우 위 일반 설치 방법대로 진행하면 됩니다.
 
-1. 처음에는 양팔이 같은 0자세에 있습니다. 수정된 보호 구 표면 최소 간격은 약 22.16mm로 통과합니다. 이는 베이스 외곽 간격 95mm와 다른 값입니다.
+1. 처음에는 양팔이 같은 0자세에 있습니다. 관절 중심 최소 거리는 175mm, 반지름 40mm 구의 표면 간격은 95mm로 통과합니다.
 2. 한 팔의 관절을 조금씩 움직이고 반투명 보호 구가 상대 팔에 접근하는 것을 봅니다.
-3. 요청 자세 또는 현재 허용 자세에서 요청 자세로 이동하는 보간 구간의 간격이 20mm 이하이면 빨간색과 `LIMIT REACHED`가 표시됩니다.
+3. 요청 자세 또는 현재 허용 자세에서 요청 자세로 이동하는 보간 구간의 구 표면 간격이 10mm 이하(중심 거리 90mm 이하)이면 빨간색과 `LIMIT REACHED`가 표시됩니다.
 4. 불투명 로봇은 마지막 허용 자세에서 멈추며 반투명 요청 로봇은 계속 움직일 수 있습니다.
 5. 슬라이더를 다시 안전한 쪽으로 움직이면 데모가 자동으로 따라갑니다. 필요하면 조절 창의 Zero all joints 버튼으로 모든 관절을 0으로 돌립니다.
 
@@ -77,13 +77,13 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 
 ## 임계값 바꾸기
 
-표면 여유를 30mm로 바꾸려면 종료(Ctrl+C) 후:
+외형 비교 모드에서 표면 여유를 30mm로 바꾸려면 종료(Ctrl+C) 후:
 
 ```bash
-ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collision_limit_visual_demo.launch.py stop_clearance_m:=0.03
+ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collision_limit_visual_demo.launch.py joint_center_limit_m:=0.0 stop_clearance_m:=0.03
 ```
 
-보호 구는 [`config/protection.yaml`](config/protection.yaml)의 `mesh_covers`로 구성합니다. 원본 STL 경계 상자를 작은 셀로 나누고 각 셀을 덮는 구를 사용합니다. 팔당 10개 링크/1,575개 구이며 손가락 전체 개폐 범위를 포함합니다. 정지 여유는 20mm입니다. 셀 크기·범위는 `tools/generate_protection_spheres.py`로 재생성할 수 있습니다. 실물 오차와 제동 여유는 별도 검증이 필요합니다.
+기본은 `joint_center_limit_m:=0.09` 관절 중심 모드입니다. 외형 비교 모드(`joint_center_limit_m:=0.0`)의 보호 구는 [`config/protection_mesh_cover.yaml`](config/protection_mesh_cover.yaml)의 `mesh_covers`로 구성합니다. 원본 STL 경계 상자를 작은 셀로 나누고 각 셀을 덮는 구를 사용합니다. 팔당 10개 링크/1,575개 구이며 손가락 전체 개폐 범위를 포함합니다. 정지 여유는 20mm입니다. 셀 크기·범위는 `tools/generate_protection_spheres.py`로 재생성할 수 있습니다. 실물 오차와 제동 여유는 별도 검증이 필요합니다.
 
 기본 베이스 원점 간격은 **175mm**로, 원본 STL 폭 80mm를 기준으로 외곽 간격 **95mm**를 반영합니다. 간격만 비교하려면 `base_separation_m:=0.18`처럼 실행 인자를 줄 수 있습니다. 이는 모델의 원점 간격이며, 양쪽 RSP 모델과 Pinocchio에 동일하게 적용됩니다. 원본 URDF 파일은 수정하지 않습니다.
 
@@ -95,9 +95,11 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 
 이때는 `INSPECT ONLY`가 표시됩니다. 여전히 실제 로봇 명령은 보내지 않습니다.
 
-## 왼팔 J1 15° 자세 재현
+## 기본 9cm 기준 확인
 
-Zero all joints를 누른 뒤 왼팔 J1만 +15°로 바꾸면 반드시 `LIMIT REACHED`가 표시됩니다. 보호 구 표면 간격은 약 -23.45mm이고, 원본 메시 간격은 약 1.35mm입니다. 구는 원본 메시 경계 상자를 감싸므로 더 일찍 제한합니다. 양팔 J1~6 나머지는 모두 0°인 기준입니다.
+Zero all joints를 누른 뒤 왼팔 J1만 바꿉니다. 다른 관절 모두 0° 기준 +15°와 +17°는 통과하고 +18°에서 제한합니다. 화면에는 Joint centre limit: 90 mm가 표시됩니다. 반지름 40mm 구 표면 사이 10mm 이하일 때 제한합니다. 기본 시뮬과 실기 guard는 같은 기준입니다.
+
+관절 중심 검사는 링크 부피 전체를 검사하지 않습니다. 원본 외형을 덮는 보수적인 보호 구를 다시 비교하려면 `joint_center_limit_m:=0.0`을 지정합니다. 이때 `protection_mesh_cover.yaml`과 20mm 표면 여유를 사용하며, +15° 자세가 제한됩니다.
 
 ## 검증용으로 바로 제한을 만드는 자세
 
@@ -129,3 +131,12 @@ Zero all joints를 누른 뒤 왼팔 J1만 +15°로 바꾸면 반드시 `LIMIT R
 ## 실물 SDK 출력과 비교
 
 SDK의 `joint_i / 1000`으로 출력한 도(°) 값을 화면에 그대로 입력합니다. 예를 들어 왼팔 실측 `[-0.50, 171.73, -168.33, -0.85, 18.54, -75.98]`은 왼팔 J1~J6 입력란에 그대로 넣습니다. 각도는 현재 자세에서의 변화량이 아니라 절대 관절각입니다. 양팔 충돌 비교에는 양팔 전체 각도가 모두 같아야 합니다. 제한에 걸리면 반투명 요청 로봇을 비교하거나 `block_unsafe:=false`로 자세를 관찰합니다.
+
+
+## 관절 중심 거리 8cm 비교 모드
+
+```bash
+bash run_collision_visual_demo.sh joint_center_limit_m:=0.08
+```
+
+양팔 관절 1~6 원점과 그리퍼 중심 사이 모든 교차 쌍의 중심 거리가 80mm 이하이면 제한합니다. 링크 중간 보조점과 원본 메시를 덮는 구는 이 비교 모드에서 사용하지 않습니다. 8cm 모드에서는 반지름 40mm 구가 닿을 때 제한입니다. 기본 9cm 모드에서는 동일한 구의 표면 간격 10mm 이하일 때 제한합니다. 화면에 Joint centre limit: 80 mm가 표시됩니다. 다른 관절 0°에서 왼팔 J1 +15°는 통과하고 약 +20.1°에서 제한합니다. 실제 외형 간격과는 다르므로 실기 보호 영역 보정의 대체가 아닙니다. 기본 실행은 9cm 관절 중심 모드입니다. 이 실행 옵션으로 비교값을 바꿔도 실기 guard YAML은 자동으로 바뀌지 않습니다.

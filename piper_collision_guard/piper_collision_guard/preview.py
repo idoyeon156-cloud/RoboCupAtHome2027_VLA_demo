@@ -17,10 +17,21 @@ class PreviewState:
     deliberately has no stop latch so users can explore with sliders.
     """
     def __init__(self, urdf, protection, stop_clearance=0.02, block_unsafe=True,
-                 path_step_rad=0.02, max_samples=400):
+                 path_step_rad=0.02, max_samples=400, joint_center_limit_m=0.0):
         if not np.isfinite(stop_clearance) or stop_clearance < 0:
             raise ValueError("stop clearance must be finite and nonnegative")
-        self.fk = DistanceModel(urdf, link_samples=2, protection=protection)
+        if not np.isfinite(joint_center_limit_m) or joint_center_limit_m < 0:
+            raise ValueError("joint centre limit must be finite and nonnegative")
+        self.joint_center_limit_m = float(joint_center_limit_m)
+        if self.joint_center_limit_m:
+            # Explicit comparison mode: equal sphere surface gap reaches its stop value when
+            # joint-centre distance reaches the requested limit. No link samples.
+            radius = min(.04, self.joint_center_limit_m / 2)
+            protection = {side: {'radii_m': [radius] * 7}
+                          for side in ('left', 'right')}
+            stop_clearance = self.joint_center_limit_m - 2 * radius
+        self.fk = DistanceModel(urdf, link_samples=0 if self.joint_center_limit_m else 2,
+                                protection=protection)
         self.stop = float(stop_clearance)
         self.block_unsafe = block_unsafe
         self.path_step_rad, self.max_samples = path_step_rad, max_samples
@@ -85,15 +96,17 @@ def main(args=None):
             description = Path(get_package_share_directory('piper_dual_description'))
             self.declare_parameter('urdf_path', str(description/'urdf/dual_piper.urdf'))
             self.declare_parameter('robot_description', '')
-            self.declare_parameter('protection_path', str(share/'config/protection.yaml'))
+            self.declare_parameter('protection_path', str(share/'config/protection_mesh_cover.yaml'))
             self.declare_parameter('stop_clearance_m', 0.02)
             self.declare_parameter('block_unsafe', True)
+            self.declare_parameter('joint_center_limit_m', 0.09)
             with open(self.get_parameter('protection_path').value, encoding='utf8') as stream:
                 protection = yaml.safe_load(stream)
             robot_description = self.get_parameter('robot_description').value or self.get_parameter('urdf_path').value
             self.state = PreviewState(robot_description, protection,
                                       self.get_parameter('stop_clearance_m').value,
-                                      self.get_parameter('block_unsafe').value)
+                                      self.get_parameter('block_unsafe').value,
+                                      joint_center_limit_m=self.get_parameter('joint_center_limit_m').value)
             self.accepted_pub = self.create_publisher(JointState, '/collision_preview/accepted_joint_states', 1)
             self.requested_pub = self.create_publisher(JointState, '/collision_preview/ghost_joint_states', 1)
             self.markers_pub = self.create_publisher(MarkerArray, '/collision_preview/markers', 1)
@@ -153,13 +166,17 @@ def main(args=None):
             label.color.r, label.color.g, label.color.b, label.color.a = (1., .3, .3, 1.) if s.blocked else (.3, 1., .5, 1.)
             action = 'ACCEPTED POSE HELD' if s.block_unsafe and s.blocked else 'INSPECT ONLY' if not s.block_unsafe else 'FOLLOWING'
             path_text = 'unavailable' if s.path_gap is None else f'{s.path_gap*1000:.1f} mm'
-            label.text = (f"{'LIMIT REACHED' if s.blocked else 'CLEAR'} | {action}\n"
+            centre_text = (f'Joint centre limit: {s.joint_center_limit_m*1000:.0f} mm | Nearest centres: {c.center_distance*1000:.1f} mm\n'
+                           if s.joint_center_limit_m else '')
+            label.text = centre_text + (f"{'LIMIT REACHED' if s.blocked else 'CLEAR'} | {action}\n"
                           f"Requested gap: {c.distance*1000:.1f} mm | Stop: {s.stop*1000:.1f} mm\n"
                           f"Path gap: {path_text}\n{s.reason}")
             array.markers.append(label)
             self.markers_pub.publish(array)
             self.status_pub.publish(String(data=json.dumps(dict(
                 visual_demo=True, blocked=s.blocked, reason=s.reason,
+                distance_mode="joint_centres" if s.joint_center_limit_m else "mesh_cover",
+                joint_center_limit_m=s.joint_center_limit_m,
                 minimum_clearance_m=c.distance, nearest_center_distance_m=c.center_distance,
                 stop_clearance_m=s.stop, path_minimum_clearance_m=s.path_gap,
                 nearest_pair=[c.left_name, c.right_name], block_unsafe=s.block_unsafe))))

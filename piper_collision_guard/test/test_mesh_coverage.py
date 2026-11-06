@@ -13,7 +13,7 @@ from piper_collision_guard.preview import PreviewState
 
 ROOT = Path(__file__).resolve().parents[2]
 URDF = ROOT/'piper_dual_description/urdf/dual_piper.urdf'
-CONFIG = yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+CONFIG = yaml.safe_load((ROOT/'piper_collision_guard/config/protection_mesh_cover.yaml').read_text())
 
 
 def test_all_source_triangles_and_finger_travel_are_inside_generated_cell_spheres():

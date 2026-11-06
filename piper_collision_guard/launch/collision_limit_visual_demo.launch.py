@@ -35,6 +35,7 @@ def demo_nodes(context):
                  'urdf_path': str(robot),
                  'robot_description': description,
                  'protection_path': LaunchConfiguration('protection_path'),
+                 'joint_center_limit_m': ParameterValue(LaunchConfiguration('joint_center_limit_m'), value_type=float),
                  'stop_clearance_m': ParameterValue(LaunchConfiguration('stop_clearance_m'), value_type=float),
                  'block_unsafe': ParameterValue(LaunchConfiguration('block_unsafe'), value_type=bool)}]),
         Node(package='robot_state_publisher', executable='robot_state_publisher',
@@ -61,11 +62,12 @@ def generate_launch_description():
     left = float(root.find("joint[@name='world_to_left_base']/origin").get('xyz').split()[1])
     right = float(root.find("joint[@name='world_to_right_base']/origin").get('xyz').split()[1])
     return LaunchDescription([
+        DeclareLaunchArgument('joint_center_limit_m', default_value='0.09', description='Demo-only joint-centre comparison threshold in metres; 0 uses full mesh covers'),
         DeclareLaunchArgument('gui', default_value='true', description='Show mouse joint sliders'),
         DeclareLaunchArgument('rviz', default_value='true'),
         DeclareLaunchArgument('block_unsafe', default_value='true', description='Hold accepted robot at unsafe requests; false inspects every pose'),
         DeclareLaunchArgument('stop_clearance_m', default_value='0.02', description='Surface gap in metres, not joint centre distance'),
         DeclareLaunchArgument('base_separation_m', default_value=str(left-right), description='Base ORIGIN spacing, not shell gap'),
-        DeclareLaunchArgument('protection_path', default_value=str(share/'config/protection.yaml')),
+        DeclareLaunchArgument('protection_path', default_value=str(share/'config/protection_mesh_cover.yaml')),
         OpaqueFunction(function=demo_nodes),
     ])

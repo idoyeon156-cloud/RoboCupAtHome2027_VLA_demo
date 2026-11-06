@@ -6,7 +6,7 @@ from piper_collision_guard.preview import PreviewState, placed_description
 
 ROOT = Path(__file__).resolve().parents[2]
 URDF = ROOT/'piper_dual_description/urdf/dual_piper.urdf'
-PROTECTION = yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+PROTECTION = yaml.safe_load((ROOT/'piper_collision_guard/config/protection_mesh_cover.yaml').read_text())
 NEAR_LEFT = [.2472277, .97563748, -.60250523, .19306071, -.55266473, .28215612]
 NEAR_RIGHT = [.63469996, .72964917, -.62731257, .34529583, -.00143087, -.37091546]
 
@@ -70,3 +70,38 @@ def test_rviz_mesh_urls_are_encoded_and_files_exist():
         assert uri.startswith('file:///') and ' ' not in uri
         assert uri.isascii()
         assert Path(unquote(urlparse(uri).path)).is_file()
+
+
+def test_joint_centre_eight_cm_comparison_allows_fifteen_degrees_and_blocks_below_limit():
+    state = PreviewState(URDF, PROTECTION, joint_center_limit_m=.08)
+    assert state.fk.link_samples == 0
+    assert state.clearance().center_distance == pytest.approx(.175)
+    for degrees, blocked in [(15, False), (20, False), (20.1, True)]:
+        values = dict.fromkeys(state.names, 0.)
+        values['left_joint1'] = np.deg2rad(degrees)
+        state.update(list(values), list(values.values()))
+        assert state.blocked == blocked
+        assert state.clearance().distance == pytest.approx(state.clearance().center_distance-.08)
+    for invalid in [-.08, float('nan')]:
+        with pytest.raises(ValueError):
+            PreviewState(URDF, PROTECTION, joint_center_limit_m=invalid)
+
+
+def test_nine_cm_demo_and_real_guard_profile_use_same_spheres_and_gap():
+    from piper_collision_guard.distance import DistanceModel
+    real = yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+    config = yaml.safe_load((ROOT/'piper_collision_guard/config/guard.yaml').read_text())['piper_collision_guard']['ros__parameters']
+    guard = DistanceModel(URDF, link_samples=config['link_samples'], protection=real)
+    state = PreviewState(URDF, PROTECTION, joint_center_limit_m=.09)
+    assert state.stop == pytest.approx(.01)
+    assert config['stop_clearance_m'] == pytest.approx(.01)
+    assert not config['enforce']
+    for degrees, blocked in [(15,False),(17,False),(18,True)]:
+        values = dict.fromkeys(state.names,0.)
+        values['left_joint1'] = np.deg2rad(degrees)
+        state.update(list(values),list(values.values()))
+        assert state.blocked == blocked
+        left = np.array([np.deg2rad(degrees),0,0,0,0,0])
+        c = guard.clearance(left,np.zeros(6))
+        assert (c.distance <= config['stop_clearance_m']) == blocked
+        assert c.distance == pytest.approx(state.clearance().distance)
