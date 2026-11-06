@@ -118,3 +118,17 @@ ROS_DOMAIN_ID=179 ROS_LOCALHOST_ONLY=1 RUN_MOVEIT_GUARD_TESTS=1 PYTEST_DISABLE_P
 ```
 
 ROS 테스트는 실제 드라이버를 실행하지 않고 별도 도메인에서 가짜 관절 상태만 사용합니다.
+
+## 간편 실행 스크립트
+
+저장소 또는 ZIP을 푼 폴더에서 실행합니다. 필요한 ROS 의존성과 가상환경은 먼저 설치해야 하며, 스크립트가 소스를 빌드한 뒤 실행합니다.
+
+```bash
+# 시뮬/RViz 확인용: 실제 로봇 명령 없음
+bash run_moveit_visual_demo.sh
+
+# 실물 연결용: 기본 감시 모드, 드라이버는 별도 실행
+bash run_moveit_real_guard.sh
+```
+
+실물용은 실물 검증 전 프로토타입입니다. 명령 전달은 검증 후에만 `enforce:=true geometry_confirmed:=true`를 추가합니다.
