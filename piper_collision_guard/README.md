@@ -1,5 +1,7 @@
 # 1차 장치: Pinocchio 양팔 거리 감시·명령 제한
 
+**마우스로 자세를 바꾸며 보고 싶다면 → [충돌 제한 시각적으로 보는 데모 (RViz2)](VISUAL_DEMO.md)**. 이 데모는 실제 드라이버와 분리되어 있으며 허용 자세/요청 자세/보호 구/제한 상태를 보여줍니다.
+
 ROS2 Humble용 첫 구현입니다. 실제 관절각 → Pinocchio FK → 공통 world의 보호 구 중심 XYZ → 좌우 모든 구 쌍의 표면 간격(중심거리 − 양쪽 반지름) → 정지 요청/명령 제한 순으로 동작합니다.
 
 RB-Y1의 [27_collisions.py](https://github.com/RainbowRobotics/rby1-sdk/blob/300a585/examples/python/27_collisions.py)를 설계 참고로 사용했습니다. RB-Y1 예제는 로봇이 제공한 **링크 간 거리**를 50Hz로 읽고 3cm 미만이면 `cancel_control()`을 호출합니다. 이 코드는 Piper 관절 프레임의 점 거리를 직접 계산하므로 그 3cm를 재사용할 수 없습니다. RB-Y1 SDK나 제어 코드를 의존성으로 사용하지 않습니다.

@@ -66,7 +66,8 @@ class DistanceModel:
     def __init__(self, urdf, link_samples=2, protection=None):
         if not isinstance(link_samples, int) or not 0 <= link_samples <= 20:
             raise ValueError("link_samples must be an integer in [0,20]")
-        self.model = pin.buildModelFromUrdf(str(urdf))
+        description = str(urdf)
+        self.model = pin.buildModelFromXML(description) if description.lstrip().startswith('<') else pin.buildModelFromUrdf(description)
         self.data = self.model.createData()
         self.slots, self.frames = {}, {}
         for side in ("left", "right"):

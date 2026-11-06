@@ -1,0 +1,93 @@
+Panels:
+- Class: rviz_common/Displays
+  Name: Displays
+- Class: rviz_common/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Enabled: true
+  Global Options:
+    Fixed Frame: world
+    Background Color: 35; 38; 44
+    Frame Rate: 30
+  Displays:
+  - Class: rviz_default_plugins/Grid
+    Name: Grid
+    Enabled: true
+    Value: true
+    Cell Size: 0.1
+    Plane Cell Count: 20
+    Color: 90; 90; 95
+    Reference Frame: world
+  - Class: rviz_default_plugins/RobotModel
+    Name: Accepted pose (held at limit)
+    Enabled: true
+    Value: true
+    Alpha: 1.0
+    Visual Enabled: true
+    Collision Enabled: false
+    Description Source: Topic
+    Description Topic:
+      Value: /collision_preview/accepted/robot_description
+      Depth: 5
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Durability Policy: Transient Local
+    TF Prefix: ''
+    Update Interval: 0
+    Links:
+      All Links Enabled: true
+      Expand Tree: false
+      Link Tree Style: Links in Alphabetic Order
+  - Class: rviz_default_plugins/RobotModel
+    Name: Requested pose (transparent ghost)
+    Enabled: true
+    Value: true
+    Alpha: 0.22
+    Visual Enabled: true
+    Collision Enabled: false
+    Description Source: Topic
+    Description Topic:
+      Value: /collision_preview/ghost/robot_description
+      Depth: 5
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Durability Policy: Transient Local
+    TF Prefix: ghost
+    Update Interval: 0
+    Links:
+      All Links Enabled: true
+      Expand Tree: false
+      Link Tree Style: Links in Alphabetic Order
+  - Class: rviz_default_plugins/MarkerArray
+    Name: Protective spheres + gap + limit status
+    Enabled: true
+    Value: true
+    Marker Topic:
+      Value: /collision_preview/markers
+      Depth: 1
+      Reliability Policy: Reliable
+      Durability Policy: Volatile
+      History Policy: Keep Last
+    Namespaces: {}
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 1.65
+      Pitch: 0.45
+      Yaw: 0.8
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 0.3
+      Target Frame: world
+Window Geometry:
+  Width: 1280
+  Height: 850
+  X: 30
+  Y: 30

@@ -6,8 +6,9 @@ setup(
     packages=["piper_collision_guard"],
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/piper_collision_guard"]),
-        ("share/piper_collision_guard", ["package.xml", "README.md"]),
+        ("share/piper_collision_guard", ["package.xml", "README.md", "VISUAL_DEMO.md"]),
         ("share/piper_collision_guard/config", glob("config/*.yaml")),
+        ("share/piper_collision_guard/config", glob("config/*.rviz")),
         ("share/piper_collision_guard/launch", glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools", "numpy"],
@@ -16,5 +17,8 @@ setup(
     maintainer_email="275096685+idoyeon156-cloud@users.noreply.github.com",
     description="Pinocchio point-distance monitor and position-command gate for dual Piper",
     license="MIT",
-    entry_points={"console_scripts": ["collision_guard = piper_collision_guard.node:main"]},
+    entry_points={"console_scripts": [
+        "collision_guard = piper_collision_guard.node:main",
+        "collision_limit_visual_demo = piper_collision_guard.preview:main",
+    ]},
 )
