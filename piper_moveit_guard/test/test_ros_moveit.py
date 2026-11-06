@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_moveit_collision_service_and_command_interlock(tmp_path):
-    assert os.environ.get('ROS_DOMAIN_ID') == '179'
+    assert os.environ.get('ROS_DOMAIN_ID') == '181'
     import rclpy
     from rclpy.node import Node
     from sensor_msgs.msg import JointState
@@ -139,7 +139,7 @@ def test_moveit_collision_service_and_command_interlock(tmp_path):
 
 
 def test_two_stage_launch_routes_only_through_moveit(tmp_path):
-    assert os.environ.get('ROS_DOMAIN_ID') == '179'
+    assert os.environ.get('ROS_DOMAIN_ID') == '181'
     import rclpy
     from rclpy.node import Node
     from std_msgs.msg import String
@@ -197,7 +197,7 @@ def test_two_stage_launch_routes_only_through_moveit(tmp_path):
     ('two_stage_guard.launch.py',[]),
 ])
 def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch_file,extra):
-    assert os.environ.get('ROS_DOMAIN_ID') == '179'
+    assert os.environ.get('ROS_DOMAIN_ID') == '181'
     import rclpy
     from rclpy.node import Node
     from std_msgs.msg import String
@@ -229,7 +229,7 @@ def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch
 
 
 def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mode(tmp_path):
-    assert os.environ.get('ROS_DOMAIN_ID')=='179'
+    assert os.environ.get('ROS_DOMAIN_ID')=='181'
     import sys
     import rclpy
     from rclpy.node import Node
@@ -251,6 +251,13 @@ def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mo
         qos=QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL)
         publisher=node.create_publisher(String,'/moveit_guard/tuned_description',qos)
         acks=[];sub=node.create_subscription(String,'/moveit_guard/applied_description',lambda m:acks.append(m.data),qos)
+        from visualization_msgs.msg import MarkerArray
+        displays=yaml.safe_load((ROOT/'piper_moveit_guard/config/moveit_boxes.rviz').read_text())['Visualization Manager']['Displays']
+        box_display=next(d for d in displays if d.get('Name')=='Live collision boxes')
+        assert next(d for d in displays if d.get('Name')=='Original shell')['Alpha']==1.0
+        arrays=[]
+        # Subscribe using the actual RViz config property, catching wrong topic keys.
+        box_sub=node.create_subscription(MarkerArray,box_display['Topic']['Value'],lambda m:arrays.append(m),1)
         def spin_until(predicate,seconds=3.):
             end=time.monotonic()+seconds
             while not predicate() and time.monotonic()<end:rclpy.spin_once(node,timeout_sec=.01)
@@ -263,6 +270,12 @@ def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mo
             assert client.wait_for_service(timeout_sec=6),(tmp_path/(launch+'.log')).read_text()
             if live:
                 assert valid()
+                spin_until(lambda:any(len(a.markers)==41 for a in arrays))
+                cubes=[m for m in arrays[-1].markers if m.type==m.CUBE and m.action==m.ADD]
+                lines=[m for m in arrays[-1].markers if m.type==m.LINE_LIST and m.action==m.ADD]
+                assert len(cubes)==len(lines)==20
+                assert all(m.header.frame_id=='world' for m in cubes+lines)
+                assert all(len(m.points)==24 and m.color.a==1. for m in lines)
                 tuned=profile.description();publisher.publish(String(data=tuned));spin_until(lambda:tuned in acks)
                 assert not valid()  # Actual FCL geometry changed, not just the drawing.
                 restored=BoxProfile(base).description();publisher.publish(String(data=restored));spin_until(lambda:restored in acks)

@@ -82,7 +82,7 @@ class Guard : public rclcpp::Node {
   void drawBoxes(moveit::core::RobotState& state) {
     if(!demo_ || !boxes_) return;
     visualization_msgs::msg::MarkerArray array;
-    visualization_msgs::msg::Marker clear;clear.action=visualization_msgs::msg::Marker::DELETEALL;
+    visualization_msgs::msg::Marker clear;clear.header.frame_id="world";clear.action=visualization_msgs::msg::Marker::DELETEALL;
     array.markers.push_back(clear);int id=0;
     for(const auto* link:model_->getLinkModelsWithCollisionGeometry()) {
       const auto& shapes=link->getShapes();
@@ -98,13 +98,27 @@ class Guard : public rclcpp::Node {
         m.pose.orientation.z=rotation.z();m.pose.orientation.w=rotation.w();
         m.scale.x=box->size[0];m.scale.y=box->size[1];m.scale.z=box->size[2];
         bool left=link->getName().rfind("left_",0)==0;
-        m.color.r=left?.2f:1.f;m.color.g=.5f;m.color.b=left?1.f:.2f;m.color.a=.35f;
-        if(link->getName()==selected_) {m.color.r=1.;m.color.g=1.;m.color.b=.1;m.color.a=.55;}
+        m.color.r=left?.2f:1.f;m.color.g=.5f;m.color.b=left?1.f:.2f;m.color.a=.15f;
+        if(link->getName()==selected_) {m.color.r=1.;m.color.g=1.;m.color.b=.1;m.color.a=.25;}
         const auto split=pair_.find(':');
         if(!pair_.empty() && (link->getName()==pair_.substr(0,split) || link->getName()==pair_.substr(split+1))) {
-          m.color.r=1.;m.color.g=.05;m.color.b=.05;m.color.a=.65;
+          m.color.r=1.;m.color.g=.05;m.color.b=.05;m.color.a=.4;
         }
         array.markers.push_back(m);
+        // Opaque outlines remain visible around the opaque robot shell.
+        auto outline=m;outline.id=id++;outline.type=visualization_msgs::msg::Marker::LINE_LIST;
+        outline.scale.x=.0025;outline.scale.y=outline.scale.z=0.;outline.color.a=1.;
+        for(int corner=0;corner<8;++corner) for(int axis=0;axis<3;++axis) {
+          int other=corner^(1<<axis);if(corner>=other) continue;
+          for(int index:{corner,other}) {
+            geometry_msgs::msg::Point point;
+            point.x=((index&1)?1.:-1.)*box->size[0]/2.;
+            point.y=((index&2)?1.:-1.)*box->size[1]/2.;
+            point.z=((index&4)?1.:-1.)*box->size[2]/2.;
+            outline.points.push_back(point);
+          }
+        }
+        array.markers.push_back(outline);
       }
     }
     boxes_->publish(array);

@@ -26,7 +26,7 @@ source install/setup.bash
 ros2 launch piper_moveit_guard moveit_box_demo.launch.py
 ```
 
-왼팔·오른팔이 두 열로 나란히 배치된 관절 조절기와 RViz가 열립니다. 각 팔의 joint1~8을 한 화면에서 조절하며 회전은 도(°), 손가락은 mm로 입력합니다. 반투명 박스는 충돌 형상, 원본 외형은 더 옅게 표시됩니다. 위쪽 상태 글씨가 초록색 CLEAR / 빨간색 BLOCKED로 바뀌고 충돌한 링크 쌍을 표시합니다. 빨간 점은 접촉 위치이며 `Box overlap`은 보고된 접촉점의 박스 겹침 깊이(mm)입니다. 이 값은 실제 외함의 침범 깊이가 아닙니다.
+왼팔·오른팔이 두 열로 나란히 배치된 관절 조절기와 RViz가 열립니다. 각 팔의 joint1~8을 한 화면에서 조절하며 회전은 도(°), 손가락은 mm로 입력합니다. 로봇 외형은 불투명하게 표시됩니다. 충돌 박스는 옅은 채움과 선명한 테두리로 표시됩니다(왼팔 파란색, 오른팔 주황색). 위쪽 상태 글씨가 초록색 CLEAR / 빨간색 BLOCKED로 바뀌고 충돌한 링크 쌍을 표시합니다. 빨간 점은 접촉 위치이며 `Box overlap`은 보고된 접촉점의 박스 겹침 깊이(mm)입니다. 이 값은 실제 외함의 침범 깊이가 아닙니다.
 이 데모는 요청 자세를 그대로 보여주는 **MoveIt 검사 전용 데모**이며, 슬라이더 이동을 막지 않습니다.
 기존 Pinocchio의 허용/요청 자세 데모와는 별개의 실행 구성입니다.
 
@@ -138,7 +138,7 @@ python3 tools/generate_collision_boxes.py --margin 0.005
 
 ```bash
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest piper_moveit_guard/test/test_geometry.py -q
-ROS_DOMAIN_ID=179 ROS_LOCALHOST_ONLY=1 RUN_MOVEIT_GUARD_TESTS=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest piper_moveit_guard/test -q
+ROS_DOMAIN_ID=181 ROS_LOCALHOST_ONLY=1 RUN_MOVEIT_GUARD_TESTS=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest piper_moveit_guard/test -q
 ```
 
 ROS 테스트는 실제 드라이버를 실행하지 않고 별도 도메인에서 가짜 관절 상태만 사용합니다.

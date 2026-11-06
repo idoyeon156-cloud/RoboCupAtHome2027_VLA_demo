@@ -13,7 +13,7 @@ Visualization Manager:
   - Class: rviz_default_plugins/RobotModel
     Name: Original shell
     Enabled: true
-    Alpha: 0.3
+    Alpha: 1.0
     Visual Enabled: true
     Collision Enabled: false
     Description Source: Topic
@@ -25,14 +25,14 @@ Visualization Manager:
   - Class: rviz_default_plugins/Marker
     Name: MoveIt collision status
     Enabled: true
-    Marker Topic:
+    Topic:
       Value: /moveit_guard/marker
       Reliability Policy: Reliable
       Depth: 10
   - Class: rviz_default_plugins/MarkerArray
     Name: Live collision boxes
     Enabled: true
-    Marker Topic:
+    Topic:
       Value: /moveit_guard/boxes
       Reliability Policy: Reliable
       Depth: 1
