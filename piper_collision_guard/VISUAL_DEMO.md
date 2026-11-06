@@ -38,6 +38,7 @@ python /usr/bin/colcon build --symlink-install --packages-select piper_dual_desc
 source /opt/ros/humble/setup.bash
 cd ~/Robocup-Home-2027_VLA_Tutorial
 source .venv/bin/activate
+export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
 ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collision_limit_visual_demo.launch.py
 ```
@@ -59,6 +60,7 @@ bash run_collision_visual_demo.sh
 source /opt/ros/humble/setup.bash
 cd "$HOME/문서/ChatGPT/VLA 공부/Robocup-Home-2027_VLA_Tutorial"
 source "$HOME/piper_vla_env/bin/activate"
+export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
 ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collision_limit_visual_demo.launch.py
 ```

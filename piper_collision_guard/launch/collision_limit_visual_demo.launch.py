@@ -19,7 +19,8 @@ def demo_nodes(context):
     description = placed_description(robot, separation, mesh_root=robot.parents[1])
     common = {'robot_description': description, 'rate': 20}
     return [
-        Node(package='piper_collision_guard', executable='collision_degree_sliders',
+        # Use the activated Python environment; generated shebangs can break in paths with spaces.
+        Node(package='piper_collision_guard', executable='collision_degree_sliders', prefix='python3',
              name='collision_demo_sliders', parameters=[common],
              remappings=[('joint_states', '/collision_preview/slider_joint_states'),
                          ('robot_description', '/collision_preview/accepted/robot_description')],
@@ -29,7 +30,7 @@ def demo_nodes(context):
              remappings=[('joint_states', '/collision_preview/slider_joint_states'),
                          ('robot_description', '/collision_preview/accepted/robot_description')],
              condition=UnlessCondition(LaunchConfiguration('gui'))),
-        Node(package='piper_collision_guard', executable='collision_limit_visual_demo',
+        Node(package='piper_collision_guard', executable='collision_limit_visual_demo', prefix='python3',
              name='collision_limit_visual_demo', output='screen', parameters=[{
                  'urdf_path': str(robot),
                  'robot_description': description,

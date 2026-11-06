@@ -9,6 +9,8 @@ if [[ ! -f .venv/bin/activate || ! -f install/setup.bash ]]; then
 fi
 source /opt/ros/humble/setup.bash
 source .venv/bin/activate
+# colcon invokes this interpreter without quoting; use the system path for its stdlib-only setup helper.
+export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
 export ROS_DOMAIN_ID="${COLLISION_DEMO_DOMAIN_ID:-178}"
 export ROS_LOCALHOST_ONLY=1

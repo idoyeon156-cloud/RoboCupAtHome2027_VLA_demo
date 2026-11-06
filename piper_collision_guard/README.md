@@ -34,6 +34,7 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 python -m pip install pin==2.7.0
 python /usr/bin/colcon build --symlink-install --packages-select piper_dual_description piper_collision_guard
+export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
 ros2 launch piper_collision_guard guard.launch.py
 ```

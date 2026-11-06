@@ -13,7 +13,7 @@ def generate_launch_description():
         DeclareLaunchArgument("enforce", default_value="false"),
         DeclareLaunchArgument("geometry_confirmed", default_value="false"),
         DeclareLaunchArgument("config", default_value=config),
-        Node(package="piper_collision_guard", executable="collision_guard", output="screen",
+        Node(package="piper_collision_guard", executable="collision_guard", output="screen", prefix="python3",
              parameters=[LaunchConfiguration("config"),
                          {"enforce": ParameterValue(LaunchConfiguration("enforce"), value_type=bool),
                           "geometry_confirmed": ParameterValue(LaunchConfiguration("geometry_confirmed"), value_type=bool)}]),
