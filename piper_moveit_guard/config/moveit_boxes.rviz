@@ -11,18 +11,6 @@ Visualization Manager:
     Enabled: true
     Cell Size: 0.1
   - Class: rviz_default_plugins/RobotModel
-    Name: MoveIt collision boxes
-    Enabled: true
-    Alpha: 0.55
-    Visual Enabled: false
-    Collision Enabled: true
-    Description Source: Topic
-    Description Topic:
-      Value: /moveit_box_demo/robot_description
-      Durability Policy: Transient Local
-      Reliability Policy: Reliable
-      Depth: 1
-  - Class: rviz_default_plugins/RobotModel
     Name: Original shell
     Enabled: true
     Alpha: 0.3
@@ -41,6 +29,13 @@ Visualization Manager:
       Value: /moveit_guard/marker
       Reliability Policy: Reliable
       Depth: 10
+  - Class: rviz_default_plugins/MarkerArray
+    Name: Live collision boxes
+    Enabled: true
+    Marker Topic:
+      Value: /moveit_guard/boxes
+      Reliability Policy: Reliable
+      Depth: 1
   Tools:
   - Class: rviz_default_plugins/Interact
   - Class: rviz_default_plugins/MoveCamera

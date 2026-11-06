@@ -5,7 +5,7 @@
   <maintainer email="275096685+idoyeon156-cloud@users.noreply.github.com">idoyeon156-cloud</maintainer>
   <license>MIT</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend><depend>moveit_core</depend><depend>moveit_ros_planning</depend>
+  <depend>rclcpp</depend><depend>moveit_core</depend><depend>urdfdom</depend><depend>moveit_ros_planning</depend>
   <depend>moveit_msgs</depend><depend>sensor_msgs</depend><depend>std_msgs</depend><depend>std_srvs</depend><depend>visualization_msgs</depend>
   <exec_depend>launch_ros</exec_depend><exec_depend>ament_index_python</exec_depend>
   <exec_depend>piper_dual_description</exec_depend><exec_depend>piper_collision_guard</exec_depend>

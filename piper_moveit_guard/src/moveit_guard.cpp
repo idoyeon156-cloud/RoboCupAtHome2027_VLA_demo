@@ -7,6 +7,9 @@
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <urdf_parser/urdf_parser.h>
+#include <geometric_shapes/shapes.h>
 #include <array>
 #include <algorithm>
 #include <chrono>
@@ -31,6 +34,10 @@ class Guard : public rclcpp::Node {
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr stop_;
   rclcpp::Publisher<JS>::SharedPtr accepted_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr boxes_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr config_ack_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr tuning_, selection_;
+  std::string selected_;
   rclcpp::Service<Validity>::SharedPtr validity_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_;
   rclcpp::TimerBase::SharedPtr timer_;
@@ -65,6 +72,70 @@ class Guard : public rclcpp::Node {
     for(int s=0;s<2;++s) for(int j=1;j<=8;++j) out.push_back(side(s)+"_joint"+std::to_string(j));
     return out;
   }
+  void forceCrossArmChecks(planning_scene::PlanningScene& scene, const moveit::core::RobotModelPtr& model) {
+    auto& acm=scene.getAllowedCollisionMatrixNonConst();
+    for(const auto* a:model->getLinkModelsWithCollisionGeometry())
+      for(const auto* b:model->getLinkModelsWithCollisionGeometry())
+        if(a->getName().rfind("left_",0)==0 && b->getName().rfind("right_",0)==0)
+          acm.setEntry(a->getName(),b->getName(),false);
+  }
+  void drawBoxes(moveit::core::RobotState& state) {
+    if(!demo_ || !boxes_) return;
+    visualization_msgs::msg::MarkerArray array;
+    visualization_msgs::msg::Marker clear;clear.action=visualization_msgs::msg::Marker::DELETEALL;
+    array.markers.push_back(clear);int id=0;
+    for(const auto* link:model_->getLinkModelsWithCollisionGeometry()) {
+      const auto& shapes=link->getShapes();
+      for(size_t i=0;i<shapes.size();++i) {
+        if(shapes[i]->type!=shapes::BOX) continue;
+        const auto* box=static_cast<const shapes::Box*>(shapes[i].get());
+        auto pose=state.getCollisionBodyTransform(link,i);Eigen::Quaterniond rotation(pose.rotation());
+        visualization_msgs::msg::Marker m;m.header.frame_id="world";m.header.stamp=now();
+        m.ns="collision_boxes";m.id=id++;m.type=visualization_msgs::msg::Marker::CUBE;
+        m.action=visualization_msgs::msg::Marker::ADD;m.pose.position.x=pose.translation().x();
+        m.pose.position.y=pose.translation().y();m.pose.position.z=pose.translation().z();
+        m.pose.orientation.x=rotation.x();m.pose.orientation.y=rotation.y();
+        m.pose.orientation.z=rotation.z();m.pose.orientation.w=rotation.w();
+        m.scale.x=box->size[0];m.scale.y=box->size[1];m.scale.z=box->size[2];
+        bool left=link->getName().rfind("left_",0)==0;
+        m.color.r=left?.2f:1.f;m.color.g=.5f;m.color.b=left?1.f:.2f;m.color.a=.35f;
+        if(link->getName()==selected_) {m.color.r=1.;m.color.g=1.;m.color.b=.1;m.color.a=.55;}
+        const auto split=pair_.find(':');
+        if(!pair_.empty() && (link->getName()==pair_.substr(0,split) || link->getName()==pair_.substr(split+1))) {
+          m.color.r=1.;m.color.g=.05;m.color.b=.05;m.color.a=.65;
+        }
+        array.markers.push_back(m);
+      }
+    }
+    boxes_->publish(array);
+  }
+  void tune(const std_msgs::msg::String& message) {
+    std_msgs::msg::String ack;
+    try {
+      if(message.data.size()>300000) throw std::runtime_error("description_too_large");
+      auto urdf=urdf::parseURDF(message.data);
+      if(!urdf) throw std::runtime_error("invalid_urdf");
+      auto candidate=std::make_shared<moveit::core::RobotModel>(urdf,model_->getSRDF());
+      if(candidate->getVariableNames()!=model_->getVariableNames() || candidate->getLinkModelNames()!=model_->getLinkModelNames())
+        throw std::runtime_error("link_or_joint_changes_not_allowed");
+      for(const auto* old:model_->getLinkModelsWithCollisionGeometry()) {
+        const auto* link=candidate->getLinkModel(old->getName());
+        if(link->getShapes().empty() || link->getShapes().size()>8) throw std::runtime_error("one_to_eight_boxes_required");
+        for(size_t i=0;i<link->getShapes().size();++i) {
+          const auto& shape=link->getShapes()[i];
+          if(shape->type!=shapes::BOX) throw std::runtime_error("boxes_only");
+          const auto* box=static_cast<const shapes::Box*>(shape.get());
+          for(double size:box->size) if(!std::isfinite(size) || size<.0009 || size>2.201) throw std::runtime_error("invalid_box_size");
+          if(!link->getCollisionOriginTransforms()[i].matrix().allFinite()) throw std::runtime_error("invalid_box_pose");
+        }
+      }
+      auto scene=std::make_unique<planning_scene::PlanningScene>(candidate);
+      forceCrossArmChecks(*scene,candidate);
+      model_=candidate;scene_=std::move(scene);pair_.clear();penetration_=0.;
+      ack.data=message.data;
+    } catch(const std::exception& e) {ack.data=std::string("ERROR: ")+e.what();}
+    config_ack_->publish(ack);
+  }
   bool collision(const std::array<double,16>& q, std::vector<moveit_msgs::msg::ContactInformation>* contacts=nullptr) {
     moveit::core::RobotState state(model_); state.setToDefaultValues();
     const auto ns=names();
@@ -90,6 +161,7 @@ class Guard : public rclcpp::Node {
       c.normal.x=contact.normal.x();c.normal.y=contact.normal.y();c.normal.z=contact.normal.z();
       c.depth=contact.depth;contacts->push_back(c);
     }
+    drawBoxes(state);
     return result.collision;
   }
   bool pathSafe(Time started) {
@@ -223,12 +295,8 @@ public:
     robot_model_loader::RobotModelLoader loader(shared_from_this(),"robot_description",false);
     model_=loader.getModel();if(!model_) throw std::runtime_error("No robot model");
     scene_=std::make_unique<planning_scene::PlanningScene>(model_);
-    // Assert all 100 cross-arm pairs are checked, regardless of supplied SRDF.
-    auto& acm=scene_->getAllowedCollisionMatrixNonConst();
-    for(const auto* a:model_->getLinkModelsWithCollisionGeometry())
-      for(const auto* b:model_->getLinkModelsWithCollisionGeometry())
-        if(a->getName().rfind("left_",0)==0 && b->getName().rfind("right_",0)==0)
-          acm.setEntry(a->getName(),b->getName(),false);
+    // Cross-arm pairs remain checked even when geometry is tuned.
+    forceCrossArmChecks(*scene_,model_);
     const auto latched=rclcpp::QoS(1).reliable().transient_local();
     status_=create_publisher<std_msgs::msg::String>("/moveit_guard/status",latched);
     stop_=create_publisher<std_msgs::msg::Bool>("/moveit_guard/stop_requested",latched);
@@ -250,6 +318,12 @@ public:
         } catch(const std::exception&) {res->valid=false;}
       });
     if(demo_) {
+      boxes_=create_publisher<visualization_msgs::msg::MarkerArray>("/moveit_guard/boxes",1);
+      config_ack_=create_publisher<std_msgs::msg::String>("/moveit_guard/applied_description",latched);
+      tuning_=create_subscription<std_msgs::msg::String>("/moveit_guard/tuned_description",latched,
+        [this](std_msgs::msg::String::SharedPtr message){tune(*message);});
+      selection_=create_subscription<std_msgs::msg::String>("/moveit_guard/selected_link",latched,
+        [this](std_msgs::msg::String::SharedPtr message){selected_=message->data;});
       subs_.push_back(create_subscription<JS>("/moveit_guard/demo_joint_states",1,[this](JS::SharedPtr msg){
         // Full state, exact names required.
         std::array<double,16> q{};const auto ns=names();

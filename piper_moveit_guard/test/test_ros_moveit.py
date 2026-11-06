@@ -193,6 +193,7 @@ def test_two_stage_launch_routes_only_through_moveit(tmp_path):
 
 @pytest.mark.parametrize('launch_file,extra',[
     ('moveit_box_demo.launch.py',['gui:=false','rviz:=false']),
+    ('moveit_box_demo.launch.py',['gui:=false','rviz:=false','editor:=true']),
     ('two_stage_guard.launch.py',[]),
 ])
 def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch_file,extra):
@@ -205,12 +206,17 @@ def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch
     log=(tmp_path/'launch.log').open('w')
     proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch','piper_moveit_guard',launch_file,*extra],
                           env=env,stdout=log,stderr=log,start_new_session=True)
-    rclpy.init();node=Node('test_monitor_no_hardware');statuses=[]
+    rclpy.init();node=Node('test_monitor_no_hardware');statuses=[];applied=[]
+    from rclpy.qos import QoSProfile, DurabilityPolicy
+    ack_sub=node.create_subscription(String,'/moveit_guard/applied_description',lambda m:applied.append(m.data),
+        QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
     sub=node.create_subscription(String,'/moveit_guard/status',lambda m:statuses.append(json.loads(m.data)),10)
     try:
         end=time.monotonic()+3
         while time.monotonic()<end:rclpy.spin_once(node,timeout_sec=.02)
         assert statuses,(tmp_path/'launch.log').read_text()
+        if 'editor:=true' in extra:
+            assert any('<robot' in text for text in applied), (tmp_path/'launch.log').read_text()
         assert node.count_publishers('/joint_ctrl_cmd_left')==0
         assert node.count_publishers('/joint_ctrl_cmd_right')==0
         if launch_file.startswith('moveit_box'):
@@ -220,3 +226,59 @@ def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch
         try:proc.wait(timeout=5)
         except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait()
         log.close()
+
+
+def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mode(tmp_path):
+    assert os.environ.get('ROS_DOMAIN_ID')=='179'
+    import sys
+    import rclpy
+    from rclpy.node import Node
+    from std_msgs.msg import String
+    from moveit_msgs.srv import GetStateValidity
+    from rclpy.qos import QoSProfile, DurabilityPolicy
+    from piper_collision_guard.box_tuning import BoxProfile
+    base=(ROOT/'piper_moveit_guard/config/dual_piper_boxes.urdf').read_text()
+    profile=BoxProfile(base);profile.links['left_base_link'][0]['size_mm']=[1000.,1000.,1000.]
+    saved=profile.save(tmp_path/'collision_tuning.json')
+    env=os.environ.copy();env['VIRTUAL_ENV']=str(Path(sys.executable).parent.parent)
+
+    def run(launch,extra,live):
+        log=(tmp_path/(launch+'.log')).open('w')
+        proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch','piper_moveit_guard',launch,*extra],
+                              env=env,stdout=log,stderr=log,start_new_session=True)
+        rclpy.init();node=Node('test_tuning_no_hardware')
+        client=node.create_client(GetStateValidity,'/moveit_guard/check_state_validity')
+        qos=QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        publisher=node.create_publisher(String,'/moveit_guard/tuned_description',qos)
+        acks=[];sub=node.create_subscription(String,'/moveit_guard/applied_description',lambda m:acks.append(m.data),qos)
+        def spin_until(predicate,seconds=3.):
+            end=time.monotonic()+seconds
+            while not predicate() and time.monotonic()<end:rclpy.spin_once(node,timeout_sec=.01)
+            assert predicate(),(tmp_path/(launch+'.log')).read_text()
+        def valid():
+            req=GetStateValidity.Request();req.robot_state.joint_state.name=[f'{s}_joint{j}' for s in ('left','right') for j in range(1,9)]
+            req.robot_state.joint_state.position=[0.]*16
+            f=client.call_async(req);spin_until(f.done);return f.result().valid
+        try:
+            assert client.wait_for_service(timeout_sec=6),(tmp_path/(launch+'.log')).read_text()
+            if live:
+                assert valid()
+                tuned=profile.description();publisher.publish(String(data=tuned));spin_until(lambda:tuned in acks)
+                assert not valid()  # Actual FCL geometry changed, not just the drawing.
+                restored=BoxProfile(base).description();publisher.publish(String(data=restored));spin_until(lambda:restored in acks)
+                assert valid()
+                # Invalid updates preserve the previously accepted model.
+                publisher.publish(String(data='<broken/>'));spin_until(lambda:any(a.startswith('ERROR:') for a in acks))
+                assert valid()
+            else:
+                assert not valid()  # Robot-mode launch loaded exactly the saved profile.
+                # No live geometry-reload subscriber in monitor/enforce operation.
+                spin_until(lambda:node.count_subscribers('/moveit_guard/tuned_description')==0)
+            assert node.count_publishers('/joint_ctrl_cmd_left')==0
+        finally:
+            node.destroy_node();rclpy.shutdown();os.killpg(proc.pid,signal.SIGINT)
+            try:proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait()
+            log.close()
+    run('moveit_box_demo.launch.py',['gui:=false','rviz:=false','editor:=false'],True)
+    run('two_stage_guard.launch.py',['collision_config:='+str(saved)],False)
