@@ -1,0 +1,25 @@
+# UNCALIBRATED EXAMPLES, not verified Piper collision envelopes.
+# Seven entries in order: link1, link2, link3, link4, link5, link6, gripper_base.
+# offsets_m: sphere centre in each link's own coordinate frame.
+# radii_m: sphere radii; supplemental samples use the larger endpoint radius.
+# Tune both offsets AND radii to cover the real arm, using RViz.
+left:
+  offsets_m:
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.1358]
+  radii_m: [0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04]
+right:
+  offsets_m:
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.0]
+    - [0.0, 0.0, 0.1358]
+  radii_m: [0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04]

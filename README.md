@@ -29,7 +29,7 @@ Fusion은 URDF를 기본 가져오기 형식으로 지원하지 않습니다. �
 ### 현재 구현 상태
 
 - 양팔 URDF와 그리퍼, 원본 visual/collision 메시: 포함.
-- Pinocchio 기반 거리 제한 노드: 아직 미구현.
+- [Pinocchio 기반 1차 거리 제한 노드](piper_collision_guard/README.md): 감시/명령 게이트 첫 구현, 실제 팔 정지 미검증.
 - MoveIt 양팔 SRDF 및 실행 중 충돌 검사/명령 차단: 아직 미구현.
 - collision 메시 여유 확대: 아직 적용하지 않음.
 - 원본 베이스 메시 Y 폭 약 80mm이므로 이 배치에서 메시 외곽 간격은 약 100mm. 실물 외곽 측정값 90mm와의 차이는 고정 돌출부/측정 기준 등 실물 대조가 필요함.
