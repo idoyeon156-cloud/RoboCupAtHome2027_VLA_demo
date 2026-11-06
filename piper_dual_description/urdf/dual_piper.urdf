@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <robot name="dual_piper">
   <!--Source: agilexrobotics/piper_ros humble @ 017ffefa64511bc6325bd77ddc4e16065c152051. Geometry, inertias, joint limits and gripper joints preserved.-->
-  <!--Placement assumes corresponding connector points are 0.18 m apart purely laterally, same orientation and mounting height. world is midway between base origins.-->
+  <!--Placement uses approximately 0.095 m between facing base shell surfaces and 0.080 m STL base width: 0.175 m origin separation, same orientation and mounting height. world is midway between base origins.-->
   <link name="world" />
   <link name="left_base_link">
     <inertial>
@@ -287,7 +287,7 @@
   <joint name="world_to_left_base" type="fixed">
     <parent link="world" />
     <child link="left_base_link" />
-    <origin xyz="0 0.09 0" rpy="0 0 0" />
+    <origin xyz="0 0.0875 0" rpy="0 0 0" />
   </joint>
   <link name="right_base_link">
     <inertial>
@@ -573,6 +573,6 @@
   <joint name="world_to_right_base" type="fixed">
     <parent link="world" />
     <child link="right_base_link" />
-    <origin xyz="0 -0.09 0" rpy="0 0 0" />
+    <origin xyz="0 -0.0875 0" rpy="0 0 0" />
   </joint>
 </robot>

@@ -77,7 +77,7 @@ def main():
     output.parent.mkdir(exist_ok=True)
     output.write_bytes(b"Dual Piper zero pose; units mm; static visual only".ljust(80, b" ")
                        + struct.pack("<I", len(vertices)) + records.tobytes())
-    assert abs(frames["left_base_link"][1, 3] - frames["right_base_link"][1, 3] - 0.18) < 1e-12
+    assert abs(frames["left_base_link"][1, 3] - frames["right_base_link"][1, 3] - 0.175) < 1e-12
     print(f"Exported {len(vertices)} triangles to {output}")
     print("Bounds (mm):", vertices.reshape(-1, 3).min(0), vertices.reshape(-1, 3).max(0))
 

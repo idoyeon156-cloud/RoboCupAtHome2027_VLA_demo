@@ -10,7 +10,7 @@ URDF = Path(__file__).resolve().parents[2] / "piper_dual_description/urdf/dual_p
 def test_shipped_protection_configuration():
     path = Path(__file__).resolve().parents[1] / "config/protection.yaml"
     fk = DistanceModel(URDF, protection=yaml.safe_load(path.read_text()))
-    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.10)
+    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.095)
 
 
 def test_fk_base_offset_and_identical_orientation():
@@ -18,7 +18,7 @@ def test_fk_base_offset_and_identical_orientation():
     q = np.array([0.1, 0.8, -1.1, 0.2, 0.3, 0.1])
     points = fk.points(q, q)
     np.testing.assert_allclose(points['left'][0]-points['right'][0],
-                               np.tile([0, 0.18, 0], (len(points['left'][0]), 1)), atol=1e-12)
+                               np.tile([0, 0.175, 0], (len(points['left'][0]), 1)), atol=1e-12)
 
 
 def test_named_messages_are_reordered_and_never_fill_missing_joints_with_zero():
@@ -51,8 +51,8 @@ def test_protective_spheres_in_world_and_invalid_radius_rejected():
     protection = {s: {'radii_m': [.04]*7} for s in ('left','right')}
     fk = DistanceModel(URDF, protection=protection)
     c = fk.clearance(np.zeros(6), np.zeros(6))
-    assert c.center_distance == pytest.approx(.18)
-    assert c.distance == pytest.approx(.10)
+    assert c.center_distance == pytest.approx(.175)
+    assert c.distance == pytest.approx(.095)
     protection['left']['radii_m'][0] = -.01
     with pytest.raises(ValueError):
         DistanceModel(URDF, protection=protection)
