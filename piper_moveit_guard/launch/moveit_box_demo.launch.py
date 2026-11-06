@@ -1,5 +1,8 @@
 """MoveIt cross-arm collision inspection with joint sliders; no hardware control."""
 from pathlib import Path
+import os
+import shlex
+import sys
 import xml.etree.ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -20,12 +23,14 @@ def generate_launch_description():
             mesh.set('filename', (mesh_root/uri[len(prefix):]).resolve().as_uri())
     description = ET.tostring(root, encoding='unicode')
     common = {'robot_description': description, 'rate': 20}
+    python = str(Path(os.environ['VIRTUAL_ENV'])/'bin/python') if os.environ.get('VIRTUAL_ENV') else sys.executable
     remaps = [('joint_states', '/moveit_guard/demo_joint_states'),
               ('robot_description', '/moveit_box_demo/robot_description')]
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('rviz', default_value='true'),
-        Node(package='joint_state_publisher_gui', executable='joint_state_publisher_gui',
+        Node(package='piper_collision_guard', executable='collision_degree_sliders',
+             prefix=shlex.quote(python),
              name='moveit_box_sliders', parameters=[common], remappings=remaps,
              condition=IfCondition(LaunchConfiguration('gui'))),
         Node(package='joint_state_publisher', executable='joint_state_publisher',

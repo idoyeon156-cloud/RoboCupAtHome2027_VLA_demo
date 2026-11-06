@@ -32,7 +32,8 @@ class DegreeControls(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(body)
         layout.addWidget(scroll)
-        self.resize(920, 580)
+        self.resize(1080, 510)
+        self.setMinimumSize(920, 460)
         jsp.set_robot_description_update_cb(self.initialize)
         self.initialize()
 
@@ -42,6 +43,14 @@ class DegreeControls(QWidget):
             item = self.grid.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+        self.grid.setHorizontalSpacing(12)
+        self.grid.setVerticalSpacing(12)
+        for side, title in enumerate(('왼팔 (LEFT)', '오른팔 (RIGHT)')):
+            header = QLabel(title)
+            header.setStyleSheet('font-weight: bold; font-size: 16px; padding: 6px;')
+            self.grid.addWidget(header, 0, side * 4, 1, 3)
+            self.grid.setColumnStretch(side * 4 + 1, 1)
+        self.grid.setColumnMinimumWidth(3, 28)
         for name in self.jsp.joint_list:
             if name not in self.jsp.free_joints:
                 continue
@@ -58,9 +67,13 @@ class DegreeControls(QWidget):
             box.setKeyboardTracking(False)
             slider = QSlider(Qt.Horizontal)
             slider.setRange(0, 100000)
-            self.grid.addWidget(QLabel(name), row * 2, side * 2)
-            self.grid.addWidget(box, row * 2, side * 2 + 1)
-            self.grid.addWidget(slider, row * 2 + 1, side * 2, 1, 2)
+            label = QLabel(name.split('_', 1)[-1])
+            label.setToolTip(name)
+            box.setMinimumWidth(110)
+            slider.setMinimumWidth(210)
+            self.grid.addWidget(label, row + 1, side * 4)
+            self.grid.addWidget(slider, row + 1, side * 4 + 1)
+            self.grid.addWidget(box, row + 1, side * 4 + 2)
             self.controls[name] = (box, slider, factor)
             box.valueChanged.connect(lambda value, n=name: self.set_position(n, value / self.controls[n][2]))
             slider.valueChanged.connect(lambda value, n=name: self.from_slider(n, value))
