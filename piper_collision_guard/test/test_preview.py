@@ -57,3 +57,16 @@ def test_spacing_override_updates_fk_and_rejects_bad_values():
     for invalid in [0, -1, float('nan')]:
         with pytest.raises(ValueError):
             placed_description(URDF, invalid)
+
+
+def test_rviz_mesh_urls_are_encoded_and_files_exist():
+    import xml.etree.ElementTree as ET
+    from urllib.parse import unquote, urlparse
+    description = placed_description(URDF, .175, mesh_root=URDF.parents[1])
+    meshes = ET.fromstring(description).findall('.//mesh')
+    assert len(meshes) == 40
+    for mesh in meshes:
+        uri = mesh.get('filename')
+        assert uri.startswith('file:///') and ' ' not in uri
+        assert uri.isascii()
+        assert Path(unquote(urlparse(uri).path)).is_file()

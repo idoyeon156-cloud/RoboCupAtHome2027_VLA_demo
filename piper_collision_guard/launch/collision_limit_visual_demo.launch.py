@@ -16,7 +16,7 @@ def demo_nodes(context):
     share = Path(get_package_share_directory('piper_collision_guard'))
     robot = Path(get_package_share_directory('piper_dual_description'))/'urdf/dual_piper.urdf'
     separation = float(LaunchConfiguration('base_separation_m').perform(context))
-    description = placed_description(robot, separation)
+    description = placed_description(robot, separation, mesh_root=robot.parents[1])
     common = {'robot_description': description, 'rate': 20}
     return [
         Node(package='joint_state_publisher_gui', executable='joint_state_publisher_gui',
