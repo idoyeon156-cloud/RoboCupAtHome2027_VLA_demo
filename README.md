@@ -36,6 +36,8 @@ Fusion은 URDF를 기본 가져오기 형식으로 지원하지 않습니다. �
 
 공식 참고: [Fusion 지원 형식](https://help.autodesk.com/view/fusion360/ENU/?guid=TPD-SUPPORTED-FILE-FORMATS), [파일 가져오기](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-import-or-open-a-file-in-Autodesk-Fusion-360.html).
 
+거리 보호 구는 원본 STL 경계 상자와 손가락 전체 개폐 범위를 덮도록 수정했습니다. 왼팔 J1 +15°/나머지 0° 자세를 1차 장치에서 차단하며, 시뮬과 실기 노드가 같은 설정을 사용합니다.
+
 ### 현재 구현 상태
 
 - 양팔 URDF와 그리퍼, 원본 visual/collision 메시: 포함.

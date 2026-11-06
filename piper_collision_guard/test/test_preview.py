@@ -23,7 +23,7 @@ def request(state, near=False):
 def test_visual_preview_holds_accepted_but_shows_unsafe_requested_pose():
     state = PreviewState(URDF, PROTECTION)
     request(state)
-    assert state.clearance().distance == pytest.approx(.095)
+    assert state.clearance().distance == pytest.approx(.02215502065)
     accepted = state.accepted.copy()
     request(state, True)
     assert state.blocked and state.clearance().distance < .02
@@ -52,8 +52,8 @@ def test_preview_rejects_nan_missing_and_out_of_limit_joints():
 
 def test_spacing_override_updates_fk_and_rejects_bad_values():
     state = PreviewState(placed_description(URDF, .18), PROTECTION)
-    assert state.clearance().center_distance == pytest.approx(.18)
-    assert state.clearance().distance == pytest.approx(.10)
+    assert state.clearance().distance > .025
+    assert state.clearance().distance == pytest.approx(.02715502065)
     for invalid in [0, -1, float('nan')]:
         with pytest.raises(ValueError):
             placed_description(URDF, invalid)

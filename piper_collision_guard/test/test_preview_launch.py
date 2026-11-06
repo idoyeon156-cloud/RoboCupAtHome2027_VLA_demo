@@ -57,8 +57,8 @@ def test_visual_demo_launch_uses_updated_spacing_and_only_simulation_topics(gui)
             details = log.read()
             assert process.poll() is None, details
             assert statuses and joints and markers, details
-            assert statuses[-1]['minimum_clearance_m'] == pytest.approx(.095)
-            assert statuses[-1]['nearest_center_distance_m'] == pytest.approx(.175)
+            assert statuses[-1]['minimum_clearance_m'] == pytest.approx(.02215502065)
+            assert statuses[-1]['nearest_center_distance_m'] > statuses[-1]['minimum_clearance_m']
             assert not statuses[-1]['blocked']
             assert len(joints[-1].name) == 16
             assert tf_left.transform.translation.y == pytest.approx(.0875)

@@ -9,9 +9,9 @@ RB-Y1의 [27_collisions.py](https://github.com/RainbowRobotics/rby1-sdk/blob/300
 ## 현재 구현 범위
 
 - 양팔 실제 관절 메시지를 이름으로 매핑하여 FK 계산. 누락/중복/NaN/범위 초과를 거부.
-- 관절 1~6 원점 + 그리퍼 중심점(원본 gripper_base의 +Z 0.1358m)을 사용.
-- 기본값으로 각 이웃 점 사이에 2개 보조점을 추가. `link_samples: 0`이면 관절점/그리퍼 중심만 사용.
-- 보호 구 중심 오프셋/반지름을 config/protection.yaml에서 좌우 각각 설정. 기본값은 미검증 예시.
+- 원본 STL의 링크별 경계 상자를 작은 셀로 나누고, 각 셀을 완전히 감싸는 구로 외형을 덮습니다. 베이스·link1~6·그리퍼 몸체·손가락 2개, 팔당 10개 링크/1,575개 구입니다.
+- 손가락은 URDF의 전체 개폐 범위를 합친 고정 보호 영역을 사용합니다. 파지물은 포함하지 않습니다.
+- `config/protection.yaml`의 `mesh_covers`에 링크 좌표계의 경계·셀 크기·반경 추가 여유를 저장합니다. `tools/generate_protection_spheres.py`로 원본 STL에서 재생성합니다. 기존 7점 사용자 설정도 지원하지만 현재 기본 모델은 아닙니다.
 - 최소 표면 간격, 해당 쌍의 중심거리/이름/XYZ를 JSON으로 발행. RViz용 보호 구 MarkerArray 발행.
 - 현재 상태와 실제→양팔 목표 관절 선형 보간 구간을 검사. 보간 예산 초과도 거부.
 - 임계값 이하이면 정지 상태를 래치. 거리가 회복돼도 자동 재개하지 않음.
@@ -19,7 +19,7 @@ RB-Y1의 [27_collisions.py](https://github.com/RainbowRobotics/rby1-sdk/blob/300
 - 기본 **monitor 모드에서는 로봇 명령 publisher를 만들지 않음**.
 - 선택적 **enforce 모드에서는 안전한 양팔 목표만 Piper 토픽으로 전달**. 차단 시 최신 유효 피드백을 한 번 캡처한 위치 유지 목표를 반복 전송. 피드백이 오래되면 위치 유지 명령도 보내지 않음.
 
-[2차 MoveIt 직육면체 검사](../piper_moveit_guard/README.md)를 함께 사용하려면 `two_stage_guard.launch.py`를 실행합니다. 기존 `guard.launch.py` 단독 실행에는 MoveIt 검사가 없습니다. 이 코드는 설정한 구로 외형을 근사합니다. 실제 외형을 모두 덮는지는 모델/실물과 대조해야 하며, 손가락 개폐와 파지물 부피는 자동 반영되지 않습니다. 고정 간격의 보간 검사는 연속 충돌 검사의 보증이 아닙니다.
+[2차 MoveIt 직육면체 검사](../piper_moveit_guard/README.md)를 함께 사용하려면 `two_stage_guard.launch.py`를 실행합니다. 기존 `guard.launch.py` 단독 실행에는 MoveIt 검사가 없습니다. 보호 구는 원본 STL의 경계 상자 전체를 덮습니다. 손가락은 전체 개폐 범위를 포함하고, 파지물과 실제 부착물은 별도 모델링이 필요합니다. 경계 상자와 구는 실제 외형보다 보수적일 수 있습니다. 고정 간격의 보간 검사는 연속 충돌 검사의 보증이 아닙니다.
 
 `stop_requested`는 **요청 신호**입니다. upstream Piper 드라이버는 이 신호를 자동 구독하지 않으며 이 패키지는 CAN EmergencyStop, disable 또는 reset을 호출하지 않습니다. 위치 유지 목표가 모터의 제동을 보장하지 않습니다. 프로세스 종료/피드백 상실 뒤에도 기존 목표가 남을 수 있어, 실물 사용에는 드라이버 쪽 독립 watchdog과 확인한 정지 동작을 연결해야 합니다. 실물 제동거리와 지연 검증 전에는 monitor 모드로 사용합니다. 모터/CAN에 연결한 시험은 수행하지 않았습니다.
 
@@ -32,7 +32,7 @@ source /opt/ros/humble/setup.bash
 cd ~/Robocup-Home-2027_VLA_Tutorial
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
-python -m pip install pin==2.7.0
+python -m pip install pin==2.7.0 scipy==1.10.1
 python /usr/bin/colcon build --symlink-install --packages-select piper_dual_description piper_collision_guard
 export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source install/setup.bash
@@ -52,7 +52,7 @@ ros2 launch piper_collision_guard guard.launch.py
 | 정지 요청 | /collision_guard/stop_requested | std_msgs/msg/Bool (transient local) |
 | 시각화 | /collision_guard/markers | visualization_msgs/msg/MarkerArray |
 
-피드백과 목표는 각각 `joint1`~`joint6` 또는 해당 팔의 `left_joint1`/`right_joint1` 이름을 사용합니다. `gripper`(또는 joint7)는 **Piper 드라이버 관례의 전체 개구 폭(m)**입니다. Pinocchio 손가락 한쪽 이동량을 이 필드에 넣지 않습니다. 입력은 관절 rad, 그리퍼 m이며 현재 ROS 시간의 유효한 header.stamp가 반드시 필요합니다. 양팔 시계는 동일 시간 기준이어야 합니다. 거리 계산의 손가락 프리즘 조인트는 사용하지 않으며, 그리퍼 중심만 검사합니다.
+피드백과 목표는 각각 `joint1`~`joint6` 또는 해당 팔의 `left_joint1`/`right_joint1` 이름을 사용합니다. `gripper`(또는 joint7)는 **Piper 드라이버 관례의 전체 개구 폭(m)**입니다. Pinocchio 손가락 한쪽 이동량을 이 필드에 넣지 않습니다. 입력은 관절 rad, 그리퍼 m이며 현재 ROS 시간의 유효한 header.stamp가 반드시 필요합니다. 양팔 시계는 동일 시간 기준이어야 합니다. 1차 거리 검사는 손가락 전체 개폐 영역을 고정 보호 구로 덮으므로 개구 폭에 따라 줄어들지 않습니다.
 
 상태 확인:
 
@@ -64,9 +64,13 @@ RViz에서 Fixed Frame을 `world`로 두고 MarkerArray에 `/collision_guard/mar
 
 ## 임계값과 재개
 
-`config/protection.yaml`의 반지름 0.04m와 `config/guard.yaml`의 표면 간 정지 여유 0.02m, 재개 여유 0.04m는 **시뮬 시작용 미검증 예시값**입니다. 정지 기준 2cm는 관절 중심 거리가 아닙니다. 양쪽 반지름이 각 4cm라면 현재 배치의 중심거리 17.5cm에서 보호 구 표면 간격은 9.5cm입니다. 이 값은 보호 구의 간격이며 실제 베이스 외형 간격과는 별도로 검증해야 합니다. 실제 자세에 따라 다른 쌍이 더 가까울 수 있습니다.
+`config/protection.yaml`은 원본 메시 경계 상자를 덮는 보호 구를 생성합니다. 일반 링크 셀은 최대 40mm, 그리퍼 몸체 셀은 최대 8mm이며 각 구 반지름은 셀 대각선의 절반 + 1mm입니다. 구마다 반지름이 다르므로 고정 중심 거리 10cm를 사용하지 않습니다. 정지 기준은 보호 구 표면 간격 `stop_clearance_m=0.02`(20mm 이하)입니다. 1mm는 모델 추가 여유이며 실측 오차/제동 검증값은 아닙니다.
 
-점 쌍 (i,j)의 중심거리 기준은 원칙적으로 `r_i + r_j + 접근속도×전체지연 + 제동거리 + 오차여유`를 포함해야 합니다. 중심점은 URDF 프레임 원점에 offsets_m를 적용한 위치이며 하우징 정중앙이라고 가정하지 않습니다. offsets_m/radii_m를 먼저 조정하고 stop_clearance_m에는 지연 중 접근거리·제동거리·오차여유를 반영합니다. 속도별 정지거리 자동 계산과 감속 배율 제어는 후속 작업입니다. 다른 팔 형상의 RB-Y1 임계값을 그대로 복사하지 않습니다.
+양팔 0°에서는 보호 구 최소 간격 약 22.16mm로 통과합니다. 왼팔 J1만 +15°인 문제 자세는 약 -23.45mm로 차단합니다. 원본 메시 실제 최소 간격은 해당 자세에서 약 1.35mm입니다. 보호 구는 경계 상자를 감싸므로 실제 접촉보다 일찍 제한할 수 있습니다.
+
+정지 후 재개 기준은 기존대로 40mm 초과입니다. 따라서 0° 자세(약 22.16mm)로 돌아가는 것만으로 실기 guard의 reset 조건을 만족하지는 않습니다. 감시 모드에서 재개 간격을 확인하고, 실기 검증을 마친 재개 절차를 사용하세요. 데모는 안전 영역 복귀 시 자동으로 따라갑니다.
+
+`mesh_covers`의 경계와 셀 크기를 바꾸면 보호 영역이 달라집니다. 생성기와 원본 메시를 기준으로 외형 포함 여부를 다시 검증합니다. 정지 여유에는 전체 지연·제동거리·실물 오차를 별도로 반영해야 합니다.
 
 거리·좌표·제동을 확인한 뒤에만 명시적으로 enforce를 켭니다:
 

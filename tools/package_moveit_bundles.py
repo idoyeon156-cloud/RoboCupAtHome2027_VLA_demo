@@ -17,7 +17,7 @@ sudo apt install ros-humble-moveit ros-humble-rviz2 ros-humble-robot-state-publi
 source /opt/ros/humble/setup.bash
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
-python -m pip install pin==2.7.0
+python -m pip install pin==2.7.0 scipy==1.10.1
 ```
 
 압축을 푼 뒤 이 파일이 있는 폴더에서 실행합니다. 스크립트가 소스를 빌드하므로 최초 실행은 시간이 걸립니다. 종료는 Ctrl+C입니다.
@@ -76,7 +76,7 @@ def main():
     out=Path(parser.parse_args().output);out.mkdir(parents=True,exist_ok=True)
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     paths=subprocess.check_output(['git','ls-files','piper_dual_description','piper_collision_guard','piper_moveit_guard',
-        'tools/generate_collision_boxes.py','tools/moveit_runtime.sh'],cwd=ROOT,text=True).splitlines()
+        'tools/generate_collision_boxes.py','tools/generate_protection_spheres.py','tools/moveit_runtime.sh'],cwd=ROOT,text=True).splitlines()
     for filename,script,readme in [
         ('dual_piper_moveit_visual_demo.zip','run_moveit_visual_demo.sh',DEMO),
         ('dual_piper_moveit_real_robot_guard_prototype.zip','run_moveit_real_guard.sh',REAL)]:

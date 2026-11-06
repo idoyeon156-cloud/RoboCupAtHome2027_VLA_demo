@@ -131,10 +131,11 @@ def main(args=None):
             radii_by_name = {}
             for side in ('left', 'right'):
                 centers, names, radii = points[side]
-                for i, (center, name, radius) in enumerate(zip(centers, names, radii)):
-                    radii_by_name[name] = radius
-                    m = self.marker(f'{side}_requested_spheres', i, Marker.SPHERE)
-                    m.pose.position = Point(x=float(center[0]), y=float(center[1]), z=float(center[2]))
+                radii_by_name.update(zip(names, radii))
+                for i, radius in enumerate(np.unique(radii)):
+                    m = self.marker(f'{side}_requested_spheres', i, Marker.SPHERE_LIST)
+                    m.points = [Point(x=float(c[0]), y=float(c[1]), z=float(c[2]))
+                                for c in centers[radii == radius]]
                     m.scale.x = m.scale.y = m.scale.z = max(.002, 2*float(radius))
                     m.color.r, m.color.g, m.color.b, m.color.a = color
                     array.markers.append(m)

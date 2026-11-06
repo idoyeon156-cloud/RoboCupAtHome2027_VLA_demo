@@ -140,14 +140,15 @@ class CollisionGuard(Node):
         points = self.fk.points(left, right)
         array = MarkerArray()
         for side in ("left", "right"):
-            for index, (center, radius) in enumerate(zip(points[side][0], points[side][2])):
+            for index, radius in enumerate(np.unique(points[side][2])):
                 marker = Marker()
                 marker.header.frame_id = "world"
                 marker.header.stamp = self.get_clock().now().to_msg()
                 marker.ns, marker.id = f"{side}_protection", index
-                marker.type, marker.action = Marker.SPHERE, Marker.ADD
+                marker.type, marker.action = Marker.SPHERE_LIST, Marker.ADD
                 marker.pose.orientation.w = 1.0
-                marker.pose.position = Point(x=float(center[0]), y=float(center[1]), z=float(center[2]))
+                marker.points = [Point(x=float(c[0]), y=float(c[1]), z=float(c[2]))
+                                 for c in points[side][0][points[side][2] == radius]]
                 marker.scale.x = marker.scale.y = marker.scale.z = max(0.002, 2*float(radius))
                 marker.color.r, marker.color.g, marker.color.b, marker.color.a = ((0.2, 0.6, 1., .35) if side == "left" else (1., 0.4, 0.2, .35))
                 array.markers.append(marker)

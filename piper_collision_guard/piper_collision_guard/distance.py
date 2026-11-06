@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pinocchio as pin
+from scipy.spatial import cKDTree
 
 
 def arm_state(names, positions, side):
@@ -43,25 +44,35 @@ class Clearance:
 
 
 def closest(left, right, left_names, right_names, left_radii=None, right_radii=None):
-    distances = np.linalg.norm(left[:, None, :] - right[None, :, :], axis=-1)
-    if not np.isfinite(distances).all():
+    left, right = np.asarray(left), np.asarray(right)
+    if left.ndim != 2 or right.ndim != 2 or left.shape[1] != 3 or right.shape[1] != 3 or not len(left) or not len(right) or not np.isfinite(left).all() or not np.isfinite(right).all():
         raise ValueError("invalid point distances")
     ra = np.zeros(len(left)) if left_radii is None else np.asarray(left_radii)
     rb = np.zeros(len(right)) if right_radii is None else np.asarray(right_radii)
     if ra.shape != (len(left),) or rb.shape != (len(right),) or not np.isfinite(ra).all() or not np.isfinite(rb).all() or np.any(ra < 0) or np.any(rb < 0):
         raise ValueError("invalid protection radii")
-    gaps = distances - ra[:, None] - rb[None, :]
-    i, j = np.unravel_index(np.argmin(gaps), gaps.shape)
-    return Clearance(float(gaps[i, j]), left_names[i], right_names[j], left[i].copy(), right[j].copy(), float(distances[i, j]))
+    # Every mesh cell group has one radius. Query each right-radius group
+    # exactly, then subtract both radii; ordinary nearest-centre search alone
+    # would miss a larger but more distant sphere.
+    best = None
+    for radius in np.unique(rb):
+        indices = np.flatnonzero(rb == radius)
+        distances, nearest = cKDTree(right[indices]).query(left)
+        gaps = distances - ra - radius
+        i = int(np.argmin(gaps))
+        j = int(indices[nearest[i]])
+        if best is None or gaps[i] < best.distance:
+            best = Clearance(float(gaps[i]), left_names[i], right_names[j], left[i].copy(), right[j].copy(), float(distances[i]))
+    return best
 
 
 class DistanceModel:
     """FK of both arms in one URDF. No mesh or MoveIt collision checking.
 
-    Point model: link1..link6 origins, a gripper centre 0.1358 m along
-    gripper_base +Z, and optional samples between successive arm origins.
-    Optional local offsets and protective radii approximate volume. Their
-    coverage must be calibrated; finger opening and payloads are not modelled.
+    Configured mesh covers enclose full source collision AABBs using cell
+    circumspheres. Finger covers include all opening positions. Legacy seven
+    point settings remain supported for explicitly supplied custom models.
+    No payload volume or measured braking model is included.
     """
     def __init__(self, urdf, link_samples=2, protection=None):
         if not isinstance(link_samples, int) or not 0 <= link_samples <= 20:
@@ -88,15 +99,42 @@ class DistanceModel:
         self.link_samples = link_samples
         default_offsets = np.zeros((7, 3))
         default_offsets[-1, 2] = 0.1358
+        self.covers = {}
         self.offsets = {}
         self.radii = {}
         for side in ("left", "right"):
             config = (protection or {}).get(side, {})
+            if 'mesh_covers' in config:
+                self.covers[side] = self.make_covers(side, config['mesh_covers'])
+                self.radii[side] = np.concatenate([item[2] for item in self.covers[side]])
+                continue
             offsets = np.asarray(config.get("offsets_m", default_offsets), dtype=float)
             radii = np.asarray(config.get("radii_m", np.zeros(7)), dtype=float)
             if offsets.shape != (7, 3) or radii.shape != (7,) or not np.isfinite(offsets).all() or not np.isfinite(radii).all() or np.any(radii < 0):
                 raise ValueError("protection needs seven finite XYZ offsets and seven non-negative radii per arm")
             self.offsets[side], self.radii[side] = offsets, radii
+
+    def make_covers(self, side, specs):
+        if not isinstance(specs, list) or not specs:
+            raise ValueError("mesh_covers must be a nonempty list")
+        result = []
+        for spec in specs:
+            frame = f"{side}_{spec['frame']}"
+            lo = np.asarray(spec['bounds_min_m'], dtype=float)
+            hi = np.asarray(spec['bounds_max_m'], dtype=float)
+            cell, padding = float(spec['cell_size_m']), float(spec['padding_m'])
+            if not self.model.existFrame(frame) or lo.shape != (3,) or hi.shape != (3,) or not np.isfinite(np.r_[lo, hi, cell, padding]).all() or np.any(hi <= lo) or cell <= 0 or padding < 0:
+                raise ValueError("invalid mesh cover bounds, frame, cell size or padding")
+            counts = np.ceil((hi - lo) / cell).astype(int)
+            if np.prod(counts.astype(float)) > 20000:
+                raise ValueError("mesh cover exceeds sphere budget")
+            step = (hi - lo) / counts
+            axes = [lo[i] + (np.arange(counts[i]) + .5) * step[i] for i in range(3)]
+            centres = np.stack(np.meshgrid(*axes, indexing='ij'), axis=-1).reshape(-1, 3)
+            radii = np.full(len(centres), np.linalg.norm(step) / 2 + padding)
+            result.append((self.model.getFrameId(frame), centres, radii,
+                           [f"{frame}_cover_{i}" for i in range(len(centres))]))
+        return result
 
     def configuration(self, left, right):
         q = pin.neutral(self.model)
@@ -118,6 +156,15 @@ class DistanceModel:
         pin.framesForwardKinematics(self.model, self.data, self.configuration(left, right))
         result = {}
         for side in ("left", "right"):
+            if side in self.covers:
+                points, names, radii = [], [], []
+                for frame, local, radius, labels in self.covers[side]:
+                    pose = self.data.oMf[frame]
+                    points.append(local @ pose.rotation.T + pose.translation)
+                    names.extend(labels)
+                    radii.append(radius)
+                result[side] = (np.concatenate(points), names, np.concatenate(radii))
+                continue
             placements = [self.data.oMf[f] for f in self.frames[side]]
             points = [p.act(offset) for p, offset in zip(placements, self.offsets[side])]
             names = [f"{side}_joint{i}_protection" for i in range(1, 7)]

@@ -11,7 +11,7 @@
 - **선:** 요청 자세에서 최소 여유를 만드는 두 구의 표면 연결선.
 - **상태 글자:** `CLEAR` / `LIMIT REACHED`, 요청 자세의 표면 간격, 이동 구간 최소 간격, 정지 여유(mm).
 
-이 데모는 팔 끝을 직접 잡아 끄는 IK 핸들이 아니라 **관절 슬라이더 방식**입니다. 손가락 슬라이더도 원본 URDF에 따라 보이지만, 1차 보호 구는 손가락 개폐를 자동 추종하는 형상이 아닙니다.
+이 데모는 팔 끝을 직접 잡아 끄는 IK 핸들이 아니라 **관절 슬라이더 방식**입니다. 손가락 슬라이더는 원본 URDF에 따라 움직입니다. 1차 보호 구는 손가락 전체 개폐 범위를 합친 고정 영역을 덮습니다.
 
 ## Ubuntu에서 처음 한 번 준비
 
@@ -26,7 +26,7 @@ sudo apt update
 sudo apt install python3-venv ros-humble-rviz2 ros-humble-robot-state-publisher ros-humble-joint-state-publisher-gui
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
-python -m pip install pin==2.7.0
+python -m pip install pin==2.7.0 scipy==1.10.1
 python /usr/bin/colcon build --symlink-install --packages-select piper_dual_description piper_collision_guard
 ```
 
@@ -67,7 +67,7 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 
 이 로컬 사본을 재빌드할 때는 `"$HOME/piper_vla_env/bin/python" /usr/bin/colcon build --symlink-install --packages-select piper_dual_description piper_collision_guard`를 사용합니다. GitHub에서 ~/Robocup-Home-2027_VLA_Tutorial처럼 공백 없는 경로에 새로 clone한 경우 위 일반 설치 방법대로 진행하면 됩니다.
 
-1. 처음에는 양팔이 같은 0자세에 있습니다. 현재 예시 설정의 최소 중심 거리는 175mm, 보호 구 표면 간격은 95mm입니다.
+1. 처음에는 양팔이 같은 0자세에 있습니다. 수정된 보호 구 표면 최소 간격은 약 22.16mm로 통과합니다. 이는 베이스 외곽 간격 95mm와 다른 값입니다.
 2. 한 팔의 관절을 조금씩 움직이고 반투명 보호 구가 상대 팔에 접근하는 것을 봅니다.
 3. 요청 자세 또는 현재 허용 자세에서 요청 자세로 이동하는 보간 구간의 간격이 20mm 이하이면 빨간색과 `LIMIT REACHED`가 표시됩니다.
 4. 불투명 로봇은 마지막 허용 자세에서 멈추며 반투명 요청 로봇은 계속 움직일 수 있습니다.
@@ -83,7 +83,7 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collision_limit_visual_demo.launch.py stop_clearance_m:=0.03
 ```
 
-보호 구의 중심/반지름은 [`config/protection.yaml`](config/protection.yaml)을 수정하고 재시작합니다. symlink-install로 빌드했다면 설정 내용 수정에 재빌드가 필요하지 않습니다. 기본 반지름 40mm, 여유 20mm는 시뮬 시작용 예시이며 실측·제동 검증값이 아닙니다.
+보호 구는 [`config/protection.yaml`](config/protection.yaml)의 `mesh_covers`로 구성합니다. 원본 STL 경계 상자를 작은 셀로 나누고 각 셀을 덮는 구를 사용합니다. 팔당 10개 링크/1,575개 구이며 손가락 전체 개폐 범위를 포함합니다. 정지 여유는 20mm입니다. 셀 크기·범위는 `tools/generate_protection_spheres.py`로 재생성할 수 있습니다. 실물 오차와 제동 여유는 별도 검증이 필요합니다.
 
 기본 베이스 원점 간격은 **175mm**로, 원본 STL 폭 80mm를 기준으로 외곽 간격 **95mm**를 반영합니다. 간격만 비교하려면 `base_separation_m:=0.18`처럼 실행 인자를 줄 수 있습니다. 이는 모델의 원점 간격이며, 양쪽 RSP 모델과 Pinocchio에 동일하게 적용됩니다. 원본 URDF 파일은 수정하지 않습니다.
 
@@ -94,6 +94,10 @@ ROS_DOMAIN_ID=178 ROS_LOCALHOST_ONLY=1 ros2 launch piper_collision_guard collisi
 ```
 
 이때는 `INSPECT ONLY`가 표시됩니다. 여전히 실제 로봇 명령은 보내지 않습니다.
+
+## 왼팔 J1 15° 자세 재현
+
+Zero all joints를 누른 뒤 왼팔 J1만 +15°로 바꾸면 반드시 `LIMIT REACHED`가 표시됩니다. 보호 구 표면 간격은 약 -23.45mm이고, 원본 메시 간격은 약 1.35mm입니다. 구는 원본 메시 경계 상자를 감싸므로 더 일찍 제한합니다. 양팔 J1~6 나머지는 모두 0°인 기준입니다.
 
 ## 검증용으로 바로 제한을 만드는 자세
 
