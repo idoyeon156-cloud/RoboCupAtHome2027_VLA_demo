@@ -5,6 +5,7 @@ if [[ "${1:-}" == --help ]]; then
   echo '사용: bash run_moveit_real_guard.sh [enforce:=true geometry_confirmed:=true]'
   echo '기본: Pinocchio + MoveIt 감시. Piper 드라이버/텔레옵은 별도 실행.'
   echo '명령 전달 설정은 실제 형상 및 정지 동작 검증 후 사용하세요.'
+  echo '기본 형상: 전체 다면체. 이전 박스 편집: geometry:=boxes editor:=true (시뮬용).'
   exit 0
 fi
 MOVEIT_REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

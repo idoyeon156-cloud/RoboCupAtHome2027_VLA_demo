@@ -15,7 +15,8 @@ pytestmark = pytest.mark.skipif(os.environ.get('RUN_MOVEIT_GUARD_TESTS') != '1',
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_moveit_collision_service_and_command_interlock(tmp_path):
+@pytest.mark.parametrize('geometry',['boxes','meshes'])
+def test_moveit_collision_service_and_command_interlock(tmp_path,geometry):
     assert os.environ.get('ROS_DOMAIN_ID') == '181'
     import rclpy
     from rclpy.node import Node
@@ -27,7 +28,9 @@ def test_moveit_collision_service_and_command_interlock(tmp_path):
     from ament_index_python.packages import get_package_prefix
 
     share=ROOT/'piper_moveit_guard/config'
-    params={'robot_description': (share/'dual_piper_boxes.urdf').read_text(),
+    from piper_collision_guard.collision_model import load_model
+    description,_,_=load_model(ROOT/'piper_moveit_guard',geometry)
+    params={'robot_description': description, 'convex_meshes': geometry=='meshes',
             'robot_description_semantic': (share/'dual_piper.srdf').read_text(),
             'enforce': True, 'geometry_confirmed': True,
             'input_timeout_s': .5, 'max_arm_skew_s': .2,
@@ -113,7 +116,7 @@ def test_moveit_collision_service_and_command_interlock(tmp_path):
         colliding=[collision_q[:6],collision_q[8:14]]
         pump(.25,zeros,colliding)
         assert status[-1]['blocked'] and status[-1]['latched'],status[-5:]
-        assert status[-1]['reason'] in ('predicted_box_collision','inputs_expired_during_check','calculation_timeout')
+        assert status[-1]['reason'] in ('predicted_box_collision','predicted_mesh_collision','inputs_expired_during_check','calculation_timeout')
         assert outputs['left'][-1].position[:6] == pytest.approx([0.]*6)
         pump(.1,zeros,zeros)
         assert status[-1]['latched']
@@ -138,7 +141,8 @@ def test_moveit_collision_service_and_command_interlock(tmp_path):
         log.close()
 
 
-def test_two_stage_launch_routes_only_through_moveit(tmp_path):
+@pytest.mark.parametrize('geometry',['boxes','meshes'])
+def test_two_stage_launch_routes_only_through_moveit(tmp_path,geometry):
     assert os.environ.get('ROS_DOMAIN_ID') == '181'
     import rclpy
     from rclpy.node import Node
@@ -150,7 +154,7 @@ def test_two_stage_launch_routes_only_through_moveit(tmp_path):
     log=(tmp_path/'launch.log').open('w')
     proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch',
                            'piper_moveit_guard','two_stage_guard.launch.py',
-                           'enforce:=true','geometry_confirmed:=true'],env=env,
+                           'enforce:=true','geometry_confirmed:=true','geometry:='+geometry],env=env,
                           stdout=log,stderr=log,start_new_session=True)
     rclpy.init();node=Node('test_two_stage_no_hardware')
     statuses={'pinocchio':[],'moveit':[]};subs=[];pubs={}
@@ -193,7 +197,7 @@ def test_two_stage_launch_routes_only_through_moveit(tmp_path):
 
 @pytest.mark.parametrize('launch_file,extra',[
     ('moveit_box_demo.launch.py',['gui:=false','rviz:=false']),
-    ('moveit_box_demo.launch.py',['gui:=false','rviz:=false','editor:=true']),
+    ('moveit_box_demo.launch.py',['gui:=false','rviz:=false','editor:=true','geometry:=boxes']),
     ('two_stage_guard.launch.py',[]),
 ])
 def test_monitor_and_headless_demo_never_publish_driver_commands(tmp_path,launch_file,extra):
@@ -238,13 +242,15 @@ def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mo
     from rclpy.qos import QoSProfile, DurabilityPolicy
     from piper_collision_guard.box_tuning import BoxProfile
     base=(ROOT/'piper_moveit_guard/config/dual_piper_boxes.urdf').read_text()
+    import xml.etree.ElementTree as ET
+    expected_boxes=len(ET.fromstring(base).findall('link/collision'))
     profile=BoxProfile(base);profile.links['left_base_link'][0]['size_mm']=[1000.,1000.,1000.]
     saved=profile.save(tmp_path/'collision_tuning.json')
     env=os.environ.copy();env['VIRTUAL_ENV']=str(Path(sys.executable).parent.parent)
 
     def run(launch,extra,live):
         log=(tmp_path/(launch+'.log')).open('w')
-        proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch','piper_moveit_guard',launch,*extra],
+        proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch','piper_moveit_guard',launch,'geometry:=boxes',*extra],
                               env=env,stdout=log,stderr=log,start_new_session=True)
         rclpy.init();node=Node('test_tuning_no_hardware')
         client=node.create_client(GetStateValidity,'/moveit_guard/check_state_validity')
@@ -270,10 +276,10 @@ def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mo
             assert client.wait_for_service(timeout_sec=6),(tmp_path/(launch+'.log')).read_text()
             if live:
                 assert valid()
-                spin_until(lambda:any(len(a.markers)==41 for a in arrays))
+                spin_until(lambda:any(len(a.markers)==1+2*expected_boxes for a in arrays))
                 cubes=[m for m in arrays[-1].markers if m.type==m.CUBE and m.action==m.ADD]
                 lines=[m for m in arrays[-1].markers if m.type==m.LINE_LIST and m.action==m.ADD]
-                assert len(cubes)==len(lines)==20
+                assert len(cubes)==len(lines)==expected_boxes
                 assert all(m.header.frame_id=='world' for m in cubes+lines)
                 assert all(len(m.points)==24 and m.color.a==1. for m in lines)
                 tuned=profile.description();publisher.publish(String(data=tuned));spin_until(lambda:tuned in acks)
@@ -295,3 +301,50 @@ def test_live_tuning_changes_moveit_geometry_and_saved_profile_loads_in_robot_mo
             log.close()
     run('moveit_box_demo.launch.py',['gui:=false','rviz:=false','editor:=false'],True)
     run('two_stage_guard.launch.py',['collision_config:='+str(saved)],False)
+
+
+def test_default_mesh_display_uses_exact_collision_triangles_and_no_box_editor(tmp_path):
+    assert os.environ.get('ROS_DOMAIN_ID')=='181'
+    import sys
+    import rclpy
+    from rclpy.node import Node
+    from std_msgs.msg import String
+    from visualization_msgs.msg import MarkerArray
+    from piper_collision_guard.collision_model import load_model
+    import xml.etree.ElementTree as ET
+    description,_,_=load_model(ROOT/'piper_moveit_guard')
+    model=ET.fromstring(description)
+    expected=62
+    log=(tmp_path/'mesh_demo.log').open('w')
+    env=os.environ.copy();env['VIRTUAL_ENV']=str(Path(sys.executable).parent.parent)
+    proc=subprocess.Popen([sys.executable,'/opt/ros/humble/bin/ros2','launch','piper_moveit_guard',
+                           'moveit_box_demo.launch.py','gui:=false','rviz:=false'],
+                          env=env,stdout=log,stderr=log,start_new_session=True)
+    rclpy.init();node=Node('test_mesh_display');arrays=[];status=[]
+    sub=node.create_subscription(MarkerArray,'/moveit_guard/boxes',lambda m:arrays.append(m),1)
+    state=node.create_subscription(String,'/moveit_guard/status',lambda m:status.append(json.loads(m.data)),10)
+    try:
+        end=time.monotonic()+8
+        while (not arrays or not status) and time.monotonic()<end:rclpy.spin_once(node,timeout_sec=.01)
+        assert arrays and status,(tmp_path/'mesh_demo.log').read_text()
+        meshes=[m for m in arrays[-1].markers if m.type==m.TRIANGLE_LIST and m.action==m.ADD]
+        lines=[m for m in arrays[-1].markers if m.type==m.LINE_LIST and m.action==m.ADD]
+        assert len(meshes)==len(lines)==expected
+        assert status[-1]['geometry']=='convex_meshes' and not status[-1]['pose_collision']
+        assert not any(m.type==m.CUBE and m.action==m.ADD for m in arrays[-1].markers)
+        assert all(m.scale.x==m.scale.y==m.scale.z==1. for m in meshes)
+        from collections import Counter
+        from struct import unpack_from
+        counts=Counter()
+        for collision in model.findall('link/collision'):
+            path=Path(collision.find('geometry/mesh').get('filename')[7:])
+            counts[unpack_from('<I',path.read_bytes(),80)[0]*3]+=1
+        assert Counter(len(m.points) for m in meshes)==counts
+        assert node.count_subscribers('/moveit_guard/tuned_description')==0
+        assert node.count_publishers('/joint_ctrl_cmd_left')==0
+        assert node.count_publishers('/joint_ctrl_cmd_right')==0
+    finally:
+        node.destroy_node();rclpy.shutdown();os.killpg(proc.pid,signal.SIGINT)
+        try:proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait()
+        log.close()

@@ -10,21 +10,17 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from piper_collision_guard.box_tuning import tuned_description
+from piper_collision_guard.collision_model import load_model
 
 
 def demo_nodes(context):
     share = Path(get_package_share_directory('piper_moveit_guard'))
     profile_path = LaunchConfiguration('collision_config').perform(context)
-    base = (share/'config/dual_piper_boxes.urdf').read_text()
-    root = ET.fromstring(tuned_description(share/'config/dual_piper_boxes.urdf', profile_path))
-    mesh_root = Path(get_package_share_directory('piper_dual_description'))
-    prefix = 'package://piper_dual_description/'
-    for mesh in root.iter('mesh'):
-        uri = mesh.get('filename', '')
-        if uri.startswith(prefix):
-            mesh.set('filename', (mesh_root/uri[len(prefix):]).resolve().as_uri())
-    description = ET.tostring(root, encoding='unicode')
+    geometry = LaunchConfiguration('geometry').perform(context)
+    description, base, profile_path = load_model(share, geometry, profile_path)
+    mesh_mode = geometry == 'meshes'
+    if mesh_mode and LaunchConfiguration('editor').perform(context).lower() == 'true':
+        raise ValueError('Mesh mode uses pre-generated polyhedra. Box editor requires geometry:=boxes editor:=true')
     common = {'robot_description': description, 'rate': 20}
     python = str(Path(os.environ['VIRTUAL_ENV'])/'bin/python') if os.environ.get('VIRTUAL_ENV') else sys.executable
     remaps = [('joint_states', '/moveit_guard/demo_joint_states'),
@@ -43,7 +39,7 @@ def demo_nodes(context):
         Node(package='piper_moveit_guard', executable='moveit_guard', output='screen',
              parameters=[{'robot_description': description,
                           'robot_description_semantic': (share/'config/dual_piper.srdf').read_text(),
-                          'demo': True}]),
+                          'demo': True, 'convex_meshes': mesh_mode}]),
         Node(package='piper_collision_guard', executable='moveit_box_editor',
              prefix=shlex.quote(python), output='screen',
              parameters=[{'base_description': base, 'profile_path': profile_path}],
@@ -54,11 +50,11 @@ def demo_nodes(context):
 
 
 def generate_launch_description():
-    saved = Path.cwd()/'collision_tuning.json'
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('rviz', default_value='true'),
-        DeclareLaunchArgument('editor', default_value=LaunchConfiguration('gui')),
-        DeclareLaunchArgument('collision_config', default_value=str(saved) if saved.is_file() else ''),
+        DeclareLaunchArgument('geometry', default_value='meshes', choices=['meshes', 'boxes']),
+        DeclareLaunchArgument('editor', default_value='false'),
+        DeclareLaunchArgument('collision_config', default_value=''),
         OpaqueFunction(function=demo_nodes),
     ])

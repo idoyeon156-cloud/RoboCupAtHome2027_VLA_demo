@@ -10,6 +10,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <urdf_parser/urdf_parser.h>
 #include <geometric_shapes/shapes.h>
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <array>
 #include <algorithm>
 #include <chrono>
@@ -41,6 +42,7 @@ class Guard : public rclcpp::Node {
   rclcpp::Service<Validity>::SharedPtr validity_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_;
   rclcpp::TimerBase::SharedPtr timer_;
+  bool convex_meshes_=false;
   bool enforce_, demo_, confirmed_, latched_=false, holding_=false, upstream_stop_=true;
   Time upstream_time_{};
   Time started_=Clock::now();
@@ -87,8 +89,7 @@ class Guard : public rclcpp::Node {
     for(const auto* link:model_->getLinkModelsWithCollisionGeometry()) {
       const auto& shapes=link->getShapes();
       for(size_t i=0;i<shapes.size();++i) {
-        if(shapes[i]->type!=shapes::BOX) continue;
-        const auto* box=static_cast<const shapes::Box*>(shapes[i].get());
+        if(shapes[i]->type!=shapes::BOX && shapes[i]->type!=shapes::MESH) continue;
         auto pose=state.getCollisionBodyTransform(link,i);Eigen::Quaterniond rotation(pose.rotation());
         visualization_msgs::msg::Marker m;m.header.frame_id="world";m.header.stamp=now();
         m.ns="collision_boxes";m.id=id++;m.type=visualization_msgs::msg::Marker::CUBE;
@@ -96,7 +97,19 @@ class Guard : public rclcpp::Node {
         m.pose.position.y=pose.translation().y();m.pose.position.z=pose.translation().z();
         m.pose.orientation.x=rotation.x();m.pose.orientation.y=rotation.y();
         m.pose.orientation.z=rotation.z();m.pose.orientation.w=rotation.w();
-        m.scale.x=box->size[0];m.scale.y=box->size[1];m.scale.z=box->size[2];
+        const auto* box=shapes[i]->type==shapes::BOX ? static_cast<const shapes::Box*>(shapes[i].get()) : nullptr;
+        const auto* mesh=shapes[i]->type==shapes::MESH ? static_cast<const shapes::Mesh*>(shapes[i].get()) : nullptr;
+        if(box) {m.scale.x=box->size[0];m.scale.y=box->size[1];m.scale.z=box->size[2];}
+        else {
+          m.type=visualization_msgs::msg::Marker::TRIANGLE_LIST;
+          m.scale.x=m.scale.y=m.scale.z=1.;
+          for(unsigned int t=0;t<mesh->triangle_count*3;++t) {
+            const auto index=mesh->triangles[t]*3;
+            geometry_msgs::msg::Point p;
+            p.x=mesh->vertices[index];p.y=mesh->vertices[index+1];p.z=mesh->vertices[index+2];
+            m.points.push_back(p);
+          }
+        }
         bool left=link->getName().rfind("left_",0)==0;
         m.color.r=left?.2f:1.f;m.color.g=.5f;m.color.b=left?1.f:.2f;m.color.a=.15f;
         if(link->getName()==selected_) {m.color.r=1.;m.color.g=1.;m.color.b=.1;m.color.a=.25;}
@@ -106,9 +119,9 @@ class Guard : public rclcpp::Node {
         }
         array.markers.push_back(m);
         // Opaque outlines remain visible around the opaque robot shell.
-        auto outline=m;outline.id=id++;outline.type=visualization_msgs::msg::Marker::LINE_LIST;
+        auto outline=m;outline.points.clear();outline.id=id++;outline.type=visualization_msgs::msg::Marker::LINE_LIST;
         outline.scale.x=.0025;outline.scale.y=outline.scale.z=0.;outline.color.a=1.;
-        for(int corner=0;corner<8;++corner) for(int axis=0;axis<3;++axis) {
+        if(box) for(int corner=0;corner<8;++corner) for(int axis=0;axis<3;++axis) {
           int other=corner^(1<<axis);if(corner>=other) continue;
           for(int index:{corner,other}) {
             geometry_msgs::msg::Point point;
@@ -117,6 +130,16 @@ class Guard : public rclcpp::Node {
             point.z=((index&4)?1.:-1.)*box->size[2]/2.;
             outline.points.push_back(point);
           }
+        }
+        if(mesh) {
+          outline.scale.x=.0006;
+          for(unsigned int t=0;t<mesh->triangle_count;++t) for(int e=0;e<3;++e)
+            for(int corner:{e,(e+1)%3}) {
+              const auto index=mesh->triangles[t*3+corner]*3;
+              geometry_msgs::msg::Point p;
+              p.x=mesh->vertices[index];p.y=mesh->vertices[index+1];p.z=mesh->vertices[index+2];
+              outline.points.push_back(p);
+            }
         }
         array.markers.push_back(outline);
       }
@@ -166,14 +189,14 @@ class Guard : public rclcpp::Node {
     if(!result.contacts.empty()) {
       pair_=result.contacts.begin()->first.first+":"+result.contacts.begin()->first.second;
       const auto& contact=result.contacts.begin()->second.front();
-      contact_position_=contact.pos;penetration_=std::max(0.,contact.depth);
+      contact_position_=contact.pos;penetration_=std::max(0.,convex_meshes_?-contact.depth:contact.depth);
     }
     if(contacts) for(const auto& entry:result.contacts) for(const auto& contact:entry.second) {
       moveit_msgs::msg::ContactInformation c;c.header.frame_id="world";c.header.stamp=now();
       c.contact_body_1=entry.first.first;c.contact_body_2=entry.first.second;
       c.position.x=contact.pos.x();c.position.y=contact.pos.y();c.position.z=contact.pos.z();
       c.normal.x=contact.normal.x();c.normal.y=contact.normal.y();c.normal.z=contact.normal.z();
-      c.depth=contact.depth;contacts->push_back(c);
+      c.depth=std::max(0.,convex_meshes_?-contact.depth:contact.depth);contacts->push_back(c);
     }
     drawBoxes(state);
     return result.collision;
@@ -195,7 +218,7 @@ class Guard : public rclcpp::Node {
         double t=static_cast<double>(s==0?l:r)/n[s];
         q[s*8+j]=a[s*8+j]+t*(b[s*8+j]-a[s*8+j]);
       }
-      if(collision(q)) {trip("predicted_box_collision");return false;}
+      if(collision(q)) {trip(convex_meshes_?"predicted_mesh_collision":"predicted_box_collision");return false;}
     }
     return true;
   }
@@ -239,7 +262,7 @@ class Guard : public rclcpp::Node {
     std_msgs::msg::Bool stop;stop.data=blocked;stop_->publish(stop);
     std_msgs::msg::String msg;std::ostringstream os;
     os<<"{\"mode\":\""<<(demo_?"demo":enforce_?"enforce":"monitor")<<"\",\"blocked\":"<<(blocked?"true":"false")
-      <<",\"latched\":"<<(latched_?"true":"false")<<",\"pose_collision\":"<<(pose_collision?"true":"false")
+      <<",\"geometry\":\""<<(convex_meshes_?"convex_meshes":"boxes")<<"\",\"latched\":"<<(latched_?"true":"false")<<",\"pose_collision\":"<<(pose_collision?"true":"false")
       <<",\"penetration_depth_m\":"<<penetration_<<",\"reason\":\""<<reason_<<"\",\"pair\":\""<<pair_<<"\"}";
     msg.data=os.str();status_->publish(msg);
     visualization_msgs::msg::Marker marker;
@@ -249,7 +272,7 @@ class Guard : public rclcpp::Node {
     marker.pose.position.z=.65;marker.pose.orientation.w=1.;marker.scale.z=.035;
     marker.color.r=blocked?1.f:.2f;marker.color.g=blocked?.2f:1.f;marker.color.b=.2f;marker.color.a=1.;
     marker.text=(blocked?"BLOCKED: ":"CLEAR: ")+reason_+"\n"+pair_;
-    if(!pair_.empty()) marker.text+="\nBox overlap: "+std::to_string(penetration_*1000.)+" mm";
+    if(!pair_.empty()) marker.text+="\nGeometry overlap: "+std::to_string(penetration_*1000.)+" mm";
     marker_->publish(marker);
     marker.ns="moveit_contact";marker.id=1;marker.type=visualization_msgs::msg::Marker::SPHERE;
     marker.action=pair_.empty()?visualization_msgs::msg::Marker::DELETE:visualization_msgs::msg::Marker::ADD;
@@ -267,7 +290,7 @@ class Guard : public rclcpp::Node {
       }
       else {
         current_collision=collision(positions(feedback_));
-        if(current_collision) trip("current_box_collision");
+        if(current_collision) trip(convex_meshes_?"current_mesh_collision":"current_box_collision");
         if(!latched_ && fresh(target_) && upstreamClear()) safe=pathSafe(started);
         else if(!latched_) reason_="waiting_for_stage1_or_targets";
       }
@@ -292,6 +315,7 @@ class Guard : public rclcpp::Node {
   }
 public:
   Guard():Node("piper_moveit_guard") {
+    convex_meshes_=declare_parameter("convex_meshes",false);
     enforce_=declare_parameter("enforce",false);demo_=declare_parameter("demo",false);
     confirmed_=declare_parameter("geometry_confirmed",false);
     timeout_=declare_parameter("input_timeout_s",0.15);skew_=declare_parameter("max_arm_skew_s",0.05);
@@ -309,6 +333,16 @@ public:
     robot_model_loader::RobotModelLoader loader(shared_from_this(),"robot_description",false);
     model_=loader.getModel();if(!model_) throw std::runtime_error("No robot model");
     scene_=std::make_unique<planning_scene::PlanningScene>(model_);
+    if(convex_meshes_) {
+      for(const auto* link:model_->getLinkModelsWithCollisionGeometry()) {
+        if(link->getShapes().empty() || link->getShapes().size()>8) throw std::runtime_error("invalid_convex_part_count");
+        for(const auto& shape:link->getShapes())
+          if(shape->type!=shapes::MESH) throw std::runtime_error("convex_mesh_mode_requires_meshes");
+      }
+      // Bullet keeps each supplied part convex, including solid containment.
+      // Never combine all parts of a link into a single hull.
+      scene_->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    }
     // Cross-arm pairs remain checked even when geometry is tuned.
     forceCrossArmChecks(*scene_,model_);
     const auto latched=rclcpp::QoS(1).reliable().transient_local();
@@ -334,7 +368,7 @@ public:
     if(demo_) {
       boxes_=create_publisher<visualization_msgs::msg::MarkerArray>("/moveit_guard/boxes",1);
       config_ack_=create_publisher<std_msgs::msg::String>("/moveit_guard/applied_description",latched);
-      tuning_=create_subscription<std_msgs::msg::String>("/moveit_guard/tuned_description",latched,
+      if(!convex_meshes_) tuning_=create_subscription<std_msgs::msg::String>("/moveit_guard/tuned_description",latched,
         [this](std_msgs::msg::String::SharedPtr message){tune(*message);});
       selection_=create_subscription<std_msgs::msg::String>("/moveit_guard/selected_link",latched,
         [this](std_msgs::msg::String::SharedPtr message){selected_=message->data;});
@@ -350,7 +384,7 @@ public:
         }
         try {
           if(!valid) throw std::runtime_error("invalid_demo_state");
-          bool hit=collision(q);reason_=hit?"box_collision":"clear";report(hit,hit);
+          bool hit=collision(q);reason_=hit?(convex_meshes_?"mesh_collision":"box_collision"):"clear";report(hit,hit);
         } catch(const std::exception&) {reason_="invalid_demo_state";report(true);}
       }));
       RCLCPP_INFO(get_logger(),"DEMO: inspect poses only; no driver publishers");return;
@@ -371,7 +405,7 @@ public:
       response->message=response->success?"Reset; fresh stage-1 commands required":"Reset refused: stale feedback or box collision";
     });
     timer_=create_wall_timer(std::chrono::milliseconds(20),[this]{tick();});
-    RCLCPP_INFO(get_logger(),"%s: cross-arm MoveIt/FCL box checks",enforce_?"ENFORCE":"MONITOR");
+    RCLCPP_INFO(get_logger(),"%s: cross-arm MoveIt %s checks",enforce_?"ENFORCE":"MONITOR",convex_meshes_?"Bullet convex mesh":"FCL box");
   }
 };
 int main(int argc,char** argv) {

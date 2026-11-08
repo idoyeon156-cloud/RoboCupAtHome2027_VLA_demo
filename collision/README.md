@@ -53,7 +53,7 @@ Fusion은 URDF를 기본 가져오기 형식으로 지원하지 않습니다. �
 - 양팔 URDF와 그리퍼, 원본 visual/collision 메시: 포함.
 - [Pinocchio 기반 1차 거리 제한 노드](piper_collision_guard/README.md): 감시/명령 게이트 첫 구현, 실제 팔 정지 미검증.
 - [2차 MoveIt 직육면체 충돌 검사](piper_moveit_guard/README.md): 좌우 링크 부피 검사, 양팔 이동 구간 표본 검사, 1차 장치와 직렬 명령 차단.
-- MoveIt 전용 모델: 링크별 직육면체 20개, 면당 5mm 예시 여유. 원본 visual/STL은 유지.
+- MoveIt 기본 모델: 양팔 전체에 구간별 볼록 다면체 62개(한 팔 31개). 사선·곡면을 따라 생성한 메시와 5mm 예시 여유를 시뮬·실물용에서 공유합니다. 원본 visual/STL은 유지하며, 이전 박스 모드는 geometry:=boxes로 선택합니다.
 - 원본 베이스 메시 Y 폭 약 80mm이므로 이 배치에서 메시 외곽 간격은 약 95mm. 실제 외함 폭과 돌출부는 실물 대조가 필요함.
 
 ### 원본과 라이선스

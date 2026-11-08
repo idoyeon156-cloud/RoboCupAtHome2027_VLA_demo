@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>piper_moveit_guard</name><version>0.1.0</version>
-  <description>Second-stage cross-arm box collision checker using MoveIt FCL.</description>
+  <description>Second-stage cross-arm convex mesh checker using MoveIt Bullet, with legacy FCL boxes.</description>
   <maintainer email="275096685+idoyeon156-cloud@users.noreply.github.com">idoyeon156-cloud</maintainer>
   <license>MIT</license>
   <buildtool_depend>ament_cmake</buildtool_depend>

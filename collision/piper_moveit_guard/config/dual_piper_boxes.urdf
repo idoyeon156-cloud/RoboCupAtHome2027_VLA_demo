@@ -16,7 +16,7 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="left_base_link_box_1">
       <origin xyz="-0.009250000119 0.000000000000 0.043000001460" rpy="0 0 0" />
       <geometry>
         <box size="0.108499998450 0.089999998212 0.096000002921" />
@@ -38,7 +38,7 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="left_link1_box_1">
       <origin xyz="0.000054515898 0.002000000328 -0.006500006653" rpy="0 0 0" />
       <geometry>
         <box size="0.081863181889 0.087500000596 0.082999989614" />
@@ -67,10 +67,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.142522240058 -0.016547972336 0.000000000000" rpy="0 0 0" />
+    <collision name="left_link2_box_1">
+      <origin xyz="0.011768406406 -0.000460608157 0.000000000000" rpy="0 0 0" />
       <geometry>
-        <box size="0.357970854491 0.106530508250 0.107000002861" />
+        <box size="0.096463187188 0.074081501669 0.107000002861" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_2">
+      <origin xyz="0.080000000000 -0.015085299861 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.060000000000 0.063879612018 0.076689551525" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_3">
+      <origin xyz="0.150000000000 -0.028418545926 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.100000000000 0.071498608352 0.051000001132" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_4">
+      <origin xyz="0.215000000000 -0.035783500099 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.050000000000 0.068059452725 0.099000001550" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_5">
+      <origin xyz="0.275753833652 -0.015810325968 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.091507667303 0.105055215513 0.107000002861" />
       </geometry>
     </collision>
   </link>
@@ -96,10 +120,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.013108532876 -0.092391059734 0.000375000760" rpy="0 0 0" />
+    <collision name="left_link3_box_1">
+      <origin xyz="-0.024800702592 -0.197375971973 0.000033704564" rpy="0 0 0" />
       <geometry>
-        <box size="0.096050875485 0.254721768424 0.090749999732" />
+        <box size="0.072610635791 0.044751943946 0.066926883757" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_2">
+      <origin xyz="-0.024808970513 -0.162500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072650000211 0.045000000000 0.067000000030" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_3">
+      <origin xyz="-0.021621182903 -0.105000000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044319928640 0.090000000000 0.054372137840" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_4">
+      <origin xyz="-0.015831744066 -0.047500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.056402421314 0.045000000000 0.089999998212" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_5">
+      <origin xyz="-0.002789930146 -0.000015087761 0.000375000760" rpy="0 0 0" />
+      <geometry>
+        <box size="0.075413670026 0.069969824478 0.090749999732" />
       </geometry>
     </collision>
   </link>
@@ -125,10 +173,22 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.001512596384 0.002043479122 -0.003775903024" rpy="0 0 0" />
+    <collision name="left_link4_box_1">
+      <origin xyz="-0.002183924429 0.001864440385 -0.027999999225" rpy="0 0 0" />
       <geometry>
-        <box size="0.072710504979 0.071079999432 0.074448190853" />
+        <box size="0.071367848888 0.070721921957 0.025999998450" />
+      </geometry>
+    </collision>
+    <collision name="left_link4_box_2">
+      <origin xyz="0.000000000000 0.004333479330 -0.004000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069685312212 0.066499999017 0.042000000000" />
+      </geometry>
+    </collision>
+    <collision name="left_link4_box_3">
+      <origin xyz="0.000000012228 0.004333479330 0.020224096201" rpy="0 0 0" />
+      <geometry>
+        <box size="0.061695924857 0.066499999017 0.026448192403" />
       </geometry>
     </collision>
   </link>
@@ -154,10 +214,16 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000077300 -0.033260645345 -0.001958261244" rpy="0 0 0" />
+    <collision name="left_link5_box_1">
+      <origin xyz="0.000000000000 -0.055000001788 -0.001779364478" rpy="0 0 0" />
       <geometry>
-        <box size="0.069961834922 0.123478716463 0.070916522518" />
+        <box size="0.066998658925 0.080000003576 0.070558728987" />
+      </geometry>
+    </collision>
+    <collision name="left_link5_box_2">
+      <origin xyz="0.000000077300 0.001739356443 -0.028166522272" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069961834922 0.053478712887 0.018500000462" />
       </geometry>
     </collision>
   </link>
@@ -183,7 +249,7 @@
         <color rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="left_link6_box_1">
       <origin xyz="-0.000059885904 0.000009059906 -0.002000000095" rpy="0 0 0" />
       <geometry>
         <box size="0.044943252802 0.044971613437 0.014000000190" />
@@ -212,10 +278,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.004749999382 0.000000000000 0.031500000507" rpy="0 0 0" />
+    <collision name="left_gripper_base_box_1">
+      <origin xyz="0.000000000084 -0.060249998957 0.053500000387" rpy="0 0 0" />
       <geometry>
-        <box size="0.080499999449 0.154999995828 0.073000001013" />
+        <box size="0.039865938603 0.034499997914 0.029000001252" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_2">
+      <origin xyz="0.000000000474 -0.036000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.057405385607 0.034000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_3">
+      <origin xyz="-0.004749999382 0.000000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.080499999449 0.058000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_4">
+      <origin xyz="0.000000000474 0.036000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.057405385607 0.034000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_5">
+      <origin xyz="0.000000000084 0.060249998957 0.053500000387" rpy="0 0 0" />
+      <geometry>
+        <box size="0.039865938603 0.034499997914 0.029000001252" />
       </geometry>
     </collision>
   </link>
@@ -239,10 +329,28 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000000000 -0.038249999285 0.013249999844" rpy="0 0 0" />
+    <collision name="left_link7_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
       <geometry>
-        <box size="0.066000001729 0.086499998569 0.036499999687" />
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
       </geometry>
     </collision>
   </link>
@@ -268,10 +376,28 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000000000 -0.038249999285 0.013249999844" rpy="0 0 0" />
+    <collision name="left_link8_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
       <geometry>
-        <box size="0.066000001729 0.086499998569 0.036499999687" />
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
       </geometry>
     </collision>
   </link>
@@ -302,7 +428,7 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="right_base_link_box_1">
       <origin xyz="-0.009250000119 0.000000000000 0.043000001460" rpy="0 0 0" />
       <geometry>
         <box size="0.108499998450 0.089999998212 0.096000002921" />
@@ -324,7 +450,7 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="right_link1_box_1">
       <origin xyz="0.000054515898 0.002000000328 -0.006500006653" rpy="0 0 0" />
       <geometry>
         <box size="0.081863181889 0.087500000596 0.082999989614" />
@@ -353,10 +479,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.142522240058 -0.016547972336 0.000000000000" rpy="0 0 0" />
+    <collision name="right_link2_box_1">
+      <origin xyz="0.011768406406 -0.000460608157 0.000000000000" rpy="0 0 0" />
       <geometry>
-        <box size="0.357970854491 0.106530508250 0.107000002861" />
+        <box size="0.096463187188 0.074081501669 0.107000002861" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_2">
+      <origin xyz="0.080000000000 -0.015085299861 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.060000000000 0.063879612018 0.076689551525" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_3">
+      <origin xyz="0.150000000000 -0.028418545926 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.100000000000 0.071498608352 0.051000001132" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_4">
+      <origin xyz="0.215000000000 -0.035783500099 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.050000000000 0.068059452725 0.099000001550" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_5">
+      <origin xyz="0.275753833652 -0.015810325968 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.091507667303 0.105055215513 0.107000002861" />
       </geometry>
     </collision>
   </link>
@@ -382,10 +532,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.013108532876 -0.092391059734 0.000375000760" rpy="0 0 0" />
+    <collision name="right_link3_box_1">
+      <origin xyz="-0.024800702592 -0.197375971973 0.000033704564" rpy="0 0 0" />
       <geometry>
-        <box size="0.096050875485 0.254721768424 0.090749999732" />
+        <box size="0.072610635791 0.044751943946 0.066926883757" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_2">
+      <origin xyz="-0.024808970513 -0.162500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072650000211 0.045000000000 0.067000000030" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_3">
+      <origin xyz="-0.021621182903 -0.105000000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044319928640 0.090000000000 0.054372137840" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_4">
+      <origin xyz="-0.015831744066 -0.047500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.056402421314 0.045000000000 0.089999998212" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_5">
+      <origin xyz="-0.002789930146 -0.000015087761 0.000375000760" rpy="0 0 0" />
+      <geometry>
+        <box size="0.075413670026 0.069969824478 0.090749999732" />
       </geometry>
     </collision>
   </link>
@@ -411,10 +585,22 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.001512596384 0.002043479122 -0.003775903024" rpy="0 0 0" />
+    <collision name="right_link4_box_1">
+      <origin xyz="-0.002183924429 0.001864440385 -0.027999999225" rpy="0 0 0" />
       <geometry>
-        <box size="0.072710504979 0.071079999432 0.074448190853" />
+        <box size="0.071367848888 0.070721921957 0.025999998450" />
+      </geometry>
+    </collision>
+    <collision name="right_link4_box_2">
+      <origin xyz="0.000000000000 0.004333479330 -0.004000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069685312212 0.066499999017 0.042000000000" />
+      </geometry>
+    </collision>
+    <collision name="right_link4_box_3">
+      <origin xyz="0.000000012228 0.004333479330 0.020224096201" rpy="0 0 0" />
+      <geometry>
+        <box size="0.061695924857 0.066499999017 0.026448192403" />
       </geometry>
     </collision>
   </link>
@@ -440,10 +626,16 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000077300 -0.033260645345 -0.001958261244" rpy="0 0 0" />
+    <collision name="right_link5_box_1">
+      <origin xyz="0.000000000000 -0.055000001788 -0.001779364478" rpy="0 0 0" />
       <geometry>
-        <box size="0.069961834922 0.123478716463 0.070916522518" />
+        <box size="0.066998658925 0.080000003576 0.070558728987" />
+      </geometry>
+    </collision>
+    <collision name="right_link5_box_2">
+      <origin xyz="0.000000077300 0.001739356443 -0.028166522272" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069961834922 0.053478712887 0.018500000462" />
       </geometry>
     </collision>
   </link>
@@ -469,7 +661,7 @@
         <color rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
       </material>
     </visual>
-    <collision>
+    <collision name="right_link6_box_1">
       <origin xyz="-0.000059885904 0.000009059906 -0.002000000095" rpy="0 0 0" />
       <geometry>
         <box size="0.044943252802 0.044971613437 0.014000000190" />
@@ -498,10 +690,34 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="-0.004749999382 0.000000000000 0.031500000507" rpy="0 0 0" />
+    <collision name="right_gripper_base_box_1">
+      <origin xyz="0.000000000084 -0.060249998957 0.053500000387" rpy="0 0 0" />
       <geometry>
-        <box size="0.080499999449 0.154999995828 0.073000001013" />
+        <box size="0.039865938603 0.034499997914 0.029000001252" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_2">
+      <origin xyz="0.000000000474 -0.036000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.057405385607 0.034000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_3">
+      <origin xyz="-0.004749999382 0.000000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.080499999449 0.058000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_4">
+      <origin xyz="0.000000000474 0.036000000000 0.031399998814" rpy="0 0 0" />
+      <geometry>
+        <box size="0.057405385607 0.034000000000 0.072799997628" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_5">
+      <origin xyz="0.000000000084 0.060249998957 0.053500000387" rpy="0 0 0" />
+      <geometry>
+        <box size="0.039865938603 0.034499997914 0.029000001252" />
       </geometry>
     </collision>
   </link>
@@ -525,10 +741,28 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000000000 -0.038249999285 0.013249999844" rpy="0 0 0" />
+    <collision name="right_link7_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
       <geometry>
-        <box size="0.066000001729 0.086499998569 0.036499999687" />
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
       </geometry>
     </collision>
   </link>
@@ -554,10 +788,28 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
-    <collision>
-      <origin xyz="0.000000000000 -0.038249999285 0.013249999844" rpy="0 0 0" />
+    <collision name="right_link8_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
       <geometry>
-        <box size="0.066000001729 0.086499998569 0.036499999687" />
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
       </geometry>
     </collision>
   </link>

@@ -1,9 +1,44 @@
-# 2차 MoveIt 직육면체 충돌 검사
+# 2차 MoveIt 다면체 충돌 검사
 
-ROS2 Humble / MoveIt FCL로 **왼팔과 오른팔 사이**의 부피 충돌을 검사합니다.
-각 STL의 링크 좌표계 외곽 범위에서 박스 20개를 만들었고, 각 면에 5mm의 미검증 예시 여유를 추가했습니다.
-원본 visual, 관절/관성, 베이스 원점 간격 175mm는 보존합니다.
-베이스 실제 메시 간격은 약 95mm, 확장한 충돌 박스 간격은 약 85mm입니다.
+기본 실행은 양팔 전체에 **구간별 볼록 다면체 메시**를 사용합니다. 팔 하나당 31개, 양팔 62개이며 베이스·팔·손목·그리퍼 몸체·양쪽 손가락에 모두 적용합니다. 원본 visual/STL과 관절, 베이스 간격은 유지합니다.
+
+원본 삼각형을 링크 로컬 구간에서 자른 뒤 각 구간을 감싸는 볼록 다면체를 만듭니다. 큰 사선 면의 방향을 유지하므로 박스가 채우던 빈 모서리를 줄입니다. 복잡한 링크는 조각을 나눈 상태로 유지합니다. 하나의 큰 볼록 껍질로 합치지 않습니다. 다만 각 조각 내부의 작은 오목한 홈까지 정확히 재현하는 원본 메시 검사는 아닙니다.
+
+지지 평면을 바깥으로 5mm 이동해 여유를 메시 파일에 포함했습니다. 원본 면은 각 조각의 경계에서 최소 약 5mm 안쪽에 들어갑니다. 다면체 모서리 방향의 여유는 5mm보다 클 수 있습니다. 화면의 색칠된 삼각형과 충돌 검사에 쓰는 메시가 같습니다. 보이지 않는 추가 5mm는 없습니다. 5mm는 실측 제동거리로 검증된 값이 아닙니다.
+
+다면체는 MoveIt의 Bullet 검사기로 각 조각을 독립적인 볼록 입체로 검사합니다. 다른 입체 안에 완전히 들어간 경우도 검사합니다. 이동 구간 검사는 여전히 기존의 유한 간격 표본 검사이며 연속 충돌 검사를 추가한 것은 아닙니다.
+
+## 기본 실행 — 시뮬과 실물에 같은 다면체 적용
+
+```bash
+bash run_moveit_visual_demo.sh
+bash run_moveit_real_guard.sh
+```
+
+시뮬은 관절 조절기와 RViz가 열립니다. 충돌 메시를 파랑/주황 면과 가는 삼각형 선으로 표시하고, 충돌한 링크의 전체 조각을 빨갛게 표시합니다. 빨간 구는 접촉 위치입니다. `Geometry overlap`은 실제 외함이 아닌 검사 형상의 겹침 깊이입니다.
+
+실물용은 기본 감시 모드이며 드라이버를 실행하지 않습니다. 설정 변경 후 재시작해야 합니다. 형상·정지 동작의 실물 검증은 별도입니다.
+
+기본 다면체 모드에는 박스 편집 창이 열리지 않습니다. 기존 `collision_tuning.json`은 기본 다면체 모드에서 자동으로 읽지 않습니다. 명시적으로 전달하면 박스 모드 전용 설정이라는 오류를 표시합니다. 다면체는 생성된 STL을 사용하므로 박스 크기 조절로 변경하지 않습니다.
+
+## 다면체 재생성
+
+```bash
+python3 tools/generate_collision_meshes.py --margin 0.005
+```
+
+생성할 때만 NumPy와 SciPy가 필요합니다. 실행용 ZIP에는 생성된 STL이 들어 있어 다시 생성할 필요가 없습니다. `meshes/collision/`은 실제 검사 메시, `config/dual_piper_meshes.urdf`는 조각의 링크 연결, `config/collision_meshes.json`은 생성 조건과 지지 평면입니다. 재생성 뒤 다시 빌드/실행하세요.
+
+## 이전 박스 모드와 수동 편집
+
+```bash
+bash run_moveit_visual_demo.sh geometry:=boxes editor:=true
+bash run_moveit_real_guard.sh geometry:=boxes
+# 기존 박스 설정을 명시하는 경우
+bash run_moveit_real_guard.sh geometry:=boxes collision_config:=/절대/경로/collision_tuning.json
+```
+
+아래의 박스 수동 편집·JSON 설명은 `geometry:=boxes`를 선택했을 때만 적용합니다. 박스 모드는 기존 MoveIt/FCL 검사를 유지합니다.
 
 ## 빌드
 
@@ -23,7 +58,7 @@ source install/setup.bash
 ## 마우스로 충돌 자세 확인 (실제 로봇 연결 없음)
 
 ```bash
-ros2 launch piper_moveit_guard moveit_box_demo.launch.py
+ros2 launch piper_moveit_guard moveit_box_demo.launch.py geometry:=boxes editor:=true
 ```
 
 왼팔·오른팔이 두 열로 나란히 배치된 관절 조절기와 RViz가 열립니다. 각 팔의 joint1~8을 한 화면에서 조절하며 회전은 도(°), 손가락은 mm로 입력합니다. 로봇 외형은 불투명하게 표시됩니다. 충돌 박스는 옅은 채움과 선명한 테두리로 표시됩니다(왼팔 파란색, 오른팔 주황색). 위쪽 상태 글씨가 초록색 CLEAR / 빨간색 BLOCKED로 바뀌고 충돌한 링크 쌍을 표시합니다. 빨간 점은 접촉 위치이며 `Box overlap`은 보고된 접촉점의 박스 겹침 깊이(mm)입니다. 이 값은 실제 외함의 침범 깊이가 아닙니다.
@@ -42,9 +77,9 @@ GUI 없이 검사 노드만 확인하려면 `gui:=false rviz:=false`를 추가�
 
 ## 링크별 충돌 박스 수동 튜닝
 
-MoveIt 데모 실행 시 **박스 편집 창**도 열립니다. 관절 조절기로 자세를 바꾸면서 별도 편집 창에서 다음을 조정합니다.
+`geometry:=boxes editor:=true`로 실행하면 **박스 편집 창**이 열립니다. 관절 조절기로 자세를 바꾸면서 별도 편집 창에서 다음을 조정합니다.
 
-1. `left_link2`처럼 링크와 박스 번호를 선택합니다. 선택 링크는 노란색, 충돌한 링크는 빨간색으로 표시됩니다.
+1. `left_link2`처럼 링크와 박스 번호를 선택합니다. 각 링크의 박스는 분할 구간 순서대로 표시됩니다. `link2`, `link3`, `gripper_base`는 각각 5개, `link4`는 3개, `link5`는 2개, 손가락 `link7`, `link8`은 각각 4개입니다. 선택 링크는 노란색, 충돌한 링크는 빨간색으로 표시됩니다.
 2. **박스 본체 크기 XYZ(mm)**, **중심 위치 XYZ(mm)**, **회전 R/P/Y(°)**, **각 면 추가 여유(mm)**를 입력합니다. 중심/회전은 해당 링크 좌표계 기준입니다.
 3. 값이 바뀌면 시뮬의 MoveIt 모델과 RViz 박스가 함께 갱신됩니다. 편집 창의 **MoveIt 반영 완료**를 확인합니다.
 4. 복잡한 부위는 **박스 추가**로 작은 박스를 여러 개 배치합니다(링크당 최대 8개). 추가한 박스는 기존 박스를 복사하므로 크기·위치를 각각 조절하세요. 링크당 박스 1개는 유지합니다.
@@ -53,11 +88,13 @@ MoveIt 데모 실행 시 **박스 편집 창**도 열립니다. 관절 조절기
 
 충돌 검사 전체 크기는 `박스 본체 크기 + 2×면당 여유`입니다. 기본 여유 5mm이면 각 축 전체 길이에 10mm가 추가됩니다. 편집 창에 최종 크기도 표시합니다.
 
+**기존 `collision_tuning.json`은 새 기본값보다 우선합니다.** 예전의 큰 박스 설정을 사용 중이면 편집기에서 양팔 `link2`, `link3`, `link4`, `link5`, `gripper_base`, `link7`, `link8`을 각각 선택하고 **이 링크 기본값**을 누른 뒤 저장하세요. 한쪽씩 복원하고 **반대 팔 같은 링크에 복사**해도 됩니다. 다른 링크의 수동 설정은 그대로 유지할 수 있습니다. 전체를 새 기본값으로 바꾸려면 기존 파일을 다른 이름으로 백업한 뒤 실행하세요.
+
 저장한 설정은 같은 폴더에서 데모/실물용 스크립트를 재실행하면 자동으로 읽습니다. 다른 ZIP 폴더나 PC에서 사용할 때는 `collision_tuning.json`도 복사하세요. 경로를 직접 지정할 수도 있습니다.
 
 ```bash
-bash run_moveit_visual_demo.sh collision_config:=/절대/경로/collision_tuning.json
-bash run_moveit_real_guard.sh collision_config:=/절대/경로/collision_tuning.json
+bash run_moveit_visual_demo.sh geometry:=boxes editor:=true collision_config:=/절대/경로/collision_tuning.json
+bash run_moveit_real_guard.sh geometry:=boxes collision_config:=/절대/경로/collision_tuning.json
 ```
 
 실물용은 **시작할 때만** 설정을 읽습니다. 편집 창의 실시간 변경은 데모 전용이며 실행 중인 실물용 노드에는 적용되지 않습니다. 설정을 바꿨다면 실물용을 종료하고 재시작해야 합니다. 이 편집기는 MoveIt 박스만 변경하며 **1차 Pinocchio 보호 구·거리 임계값은 변경하지 않습니다.**
@@ -113,21 +150,21 @@ ros2 service call /moveit_guard/reset std_srvs/srv/Trigger '{}'
 
 ## 박스 크기 변경
 
-`config/collision_boxes.csv`: 각 링크 중심/전체 크기/면당 여유(m).
+`config/collision_boxes.csv`: 각 박스의 소속 링크/중심/전체 크기/면당 여유(m). 같은 링크 이름이 여러 행에 나타납니다.
 `config/dual_piper_boxes.urdf`: MoveIt에 실제로 로드하는 모델.
 
 ```bash
 python3 tools/generate_collision_boxes.py --margin 0.005
 ```
 
-원본 STL에서 충돌 박스와 SRDF를 재생성합니다. 이 명령은 박스 수동 수정 내용을 덮어씁니다.
+원본 STL에서 구간별 충돌 박스와 SRDF를 재생성합니다. `tools/generate_collision_boxes.py`의 `SECTIONS`는 링크 로컬 좌표계에서의 분할 축/경계(m)입니다. 링크당 최대 8개의 박스를 지원하며, 기본 `link2`, `link3`, `gripper_base`는 5개, `link4`는 3개, `link5`는 2개, `link7`, `link8`은 4개입니다. 이 명령은 박스 수동 수정 내용을 덮어씁니다.
 수정 후 다시 빌드하고 노드를 재시작하세요. RViz에서 외형을 완전히 덮는지 먼저 확인합니다.
 
 ## 범위와 한계
 
 - ACM은 같은 팔 내부 쌍을 제외합니다. 좌우 100개 링크 쌍은 모두 검사합니다.
 - 이 버전은 양팔 상호 충돌 전용입니다. 같은 팔 내부, 환경/사람, 파지물은 검사하지 않습니다.
-- 박스 1개로 감싼 빈 공간 때문에 보수적으로 제한될 수 있습니다. 필요하면 여러 박스로 나눕니다.
+- 긴 링크·손목·그리퍼는 여러 박스로 나눴지만 곡면 주변에는 여전히 빈 공간이 포함될 수 있습니다. 필요하면 편집기로 각 구간의 형상을 더 조정합니다.
 - 유한 간격의 격자 검사는 연속 충돌 보증이 아닙니다. 실제 제어기의 이동 궤적이 관절 선형 보간에서 벗어나는 경우는 별도 검증이 필요합니다.
 - 5mm 여유는 실측 제동거리에서 정한 값이 아닙니다. 속도/지연/외형 오차에 맞춰 검증해야 합니다.
 - `/moveit_guard/check_state_validity`는 테스트/도구용 서비스입니다. 좌우 joint1~8 총 16개를 모두 넣어야 하며 양팔 충돌과 관절 범위만 검사합니다.

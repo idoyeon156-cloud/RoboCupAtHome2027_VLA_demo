@@ -8,7 +8,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from piper_collision_guard.box_tuning import tuned_description
+from piper_collision_guard.collision_model import load_model
 
 
 def nodes(context):
@@ -17,6 +17,8 @@ def nodes(context):
     enforce = LaunchConfiguration('enforce').perform(context).lower() == 'true'
     confirmed = LaunchConfiguration('geometry_confirmed').perform(context).lower() == 'true'
     python = str(Path(os.environ['VIRTUAL_ENV'])/'bin/python') if os.environ.get('VIRTUAL_ENV') else sys.executable
+    geometry = LaunchConfiguration('geometry').perform(context)
+    description, _, _ = load_model(share, geometry, LaunchConfiguration('collision_config').perform(context))
     return [
         Node(package='piper_collision_guard', executable='collision_guard', output='screen',
              prefix=shlex.quote(python),
@@ -25,8 +27,7 @@ def nodes(context):
              remappings=[('/joint_ctrl_cmd_left', '/pinocchio_checked/left_target'),
                          ('/joint_ctrl_cmd_right', '/pinocchio_checked/right_target')]),
         Node(package='piper_moveit_guard', executable='moveit_guard', output='screen',
-             parameters=[{'robot_description': tuned_description(share/'config/dual_piper_boxes.urdf',
-                              LaunchConfiguration('collision_config').perform(context)),
+             parameters=[{'robot_description': description, 'convex_meshes': geometry == 'meshes',
                           'robot_description_semantic': (share/'config/dual_piper.srdf').read_text(),
                           'enforce': enforce, 'geometry_confirmed': confirmed}]),
     ]
@@ -36,7 +37,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('enforce', default_value='false'),
         DeclareLaunchArgument('geometry_confirmed', default_value='false'),
-        DeclareLaunchArgument('collision_config', default_value=str(Path.cwd()/'collision_tuning.json')
-                              if (Path.cwd()/'collision_tuning.json').is_file() else ''),
+        DeclareLaunchArgument('geometry', default_value='meshes', choices=['meshes', 'boxes']),
+        DeclareLaunchArgument('collision_config', default_value=''),
         OpaqueFunction(function=nodes),
     ])
