@@ -9,7 +9,27 @@
 
 기존 위치에서 만든 `build/`, `install/`은 재사용하지 말고 이 폴더에서 다시 빌드하세요.
 
-## MoveIt 실행 방식
+## 안전장치 두 단계
+
+| 단계 | 방식 | 검사 대상 |
+|---|---|---|
+| 1차 | Pinocchio 조인트 거리 기반 충돌 방지 | 양팔 관절 1~6 원점과 그리퍼 중심 사이 거리 |
+| 2차 | MoveIt 다면체 메시 충돌 검사 | 링크·손목·그리퍼의 입체 형상 간 충돌 |
+
+실물용 통합 실행의 명령 경로는 **목표 명령 → 1차 거리 검사 → 2차 메시 검사 → Piper 드라이버**입니다. 명령 전달·차단을 활성화하면 두 단계 모두 통과한 목표만 드라이버에 전달합니다.
+
+### 1차: 조인트 거리 기반 충돌 방지
+
+각 중심에 반지름 4cm 보호 구를 두고, 양팔 보호 구 표면 간격이 1cm 이하이면 제한합니다. 즉 **중심 거리 9cm 이하**가 기본 기준입니다. 현재 자세와 목표까지의 이동 구간을 검사합니다.
+
+```bash
+# 1차 거리 제한 시뮬 — 관절 조절기 + 보호 구 시각화
+bash run_collision_visual_demo.sh
+```
+
+설치와 설정 변경은 [1차 시뮬 안내](piper_collision_guard/VISUAL_DEMO.md), 실물 단독 실행은 [1차 실물 연결 안내](piper_collision_guard/README.md)를 참고하세요. 실물에서 두 단계를 함께 사용할 때는 아래 통합 실행 명령을 사용합니다.
+
+### 2차: MoveIt 메시 기반 충돌 방지
 
 기본은 **구간별 볼록 다면체 메시**입니다. 원본 STL의 사선·곡면을 따라 베이스, 팔, 손목, 그리퍼 몸체와 손가락에 적용합니다. **팔 하나당 31개 조각, 양팔 총 62개**이며 시뮬용과 실물용이 같은 형상을 사용합니다. 지지 평면을 바깥으로 5mm(0.5cm) 이동한 여유가 메시 자체에 포함됩니다. 모서리 방향의 여유는 5mm보다 클 수 있습니다.
 
@@ -17,13 +37,13 @@
 # 기본 다면체 시뮬 — 관절 조절기 + RViz
 bash run_moveit_visual_demo.sh
 
-# 기본 다면체 실물용 — 감시 모드
+# 실물용 1차 거리 + 2차 다면체 통합 실행 — 기본 감시 모드
 bash run_moveit_real_guard.sh
 
 # 기존 박스 모드 — 수동 편집 창 포함
 bash run_moveit_visual_demo.sh geometry:=boxes editor:=true
 
-# 기존 박스 모드 — 실물용
+# 실물용 1차 거리 + 2차 기존 박스 통합 실행
 bash run_moveit_real_guard.sh geometry:=boxes
 ```
 
@@ -80,8 +100,6 @@ bash run_moveit_real_guard.sh geometry:=boxes collision_config:=/절대/경로/c
 Fusion은 URDF를 기본 가져오기 형식으로 지원하지 않습니다. 보기용 STL에는 양팔 배치와 외형만 들어 있고 관절, 질량, ROS 정보 또는 충돌 방지 기능은 없습니다. 관절을 조절하며 모델을 보려면 URDF 뷰어/RViz를 사용하거나 별도의 URDF 가져오기 애드인이 필요합니다. 모든 관절 0은 모델의 기준 자세이며 실제 운용 권장 자세가 아닙니다.
 
 공식 참고: [Fusion 지원 형식](https://help.autodesk.com/view/fusion360/ENU/?guid=TPD-SUPPORTED-FILE-FORMATS), [파일 가져오기](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-import-or-open-a-file-in-Autodesk-Fusion-360.html).
-
-1차 거리 장치의 기본값은 관절 중심 거리 9cm입니다. 반지름 4cm 보호 구 표면 사이 1cm 이하에서 제한하며 시뮬·실기 노드가 같은 기준을 사용합니다. 링크 부피 검사는 2차 MoveIt에서 수행합니다.
 
 ### 현재 구현 상태
 
