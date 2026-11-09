@@ -1,0 +1,15 @@
+piper_collision_guard:
+  ros__parameters:
+    enforce: false
+    geometry_confirmed: false
+    rate_hz: 50.0
+    stop_clearance_m: 0.01
+    resume_clearance_m: 0.04
+    link_samples: 0
+    feedback_timeout_s: 0.15
+    target_timeout_s: 0.15
+    max_arm_skew_s: 0.05
+    path_step_rad: 0.02
+    max_path_samples: 100
+    driver_speed_ratio: 10
+    gripper_effort_nm: 1.0

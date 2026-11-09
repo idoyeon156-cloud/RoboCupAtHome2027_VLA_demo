@@ -1,0 +1,19 @@
+# Copy entries into robot.yaml attachments. Not enabled by default.
+attachments:
+  - name: head_camera_mount
+    parent: world
+    xyz: [0.10, 0.0, 0.70]
+    rpy: [0.0, 0.0, 0.0]
+    geometry:
+      box: [0.08, 0.06, 0.04]
+    touch_links: []
+  - name: left_wrist_sensor
+    parent: left_link6
+    xyz: [0.0, 0.06, 0.0]
+    rpy: [0.0, 0.0, 0.0]
+    geometry:
+      box: [0.03, 0.04, 0.05]
+    touch_links: [left_link6]
+# Also supports sphere: radius, cylinder: [radius, length],
+# mesh: package://piper_dual_description/meshes/your_part.STL
+# and optional mesh scale: [1.0, 1.0, 1.0].
