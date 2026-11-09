@@ -48,19 +48,26 @@ bash run_distance_rviz.sh
 
 ## 바뀌었을 때 무엇을 수정하나
 
-| 변경 | 수정 위치 |
-|---|---|
-| 양팔 간격·설치 높이·기울기 | `config/robot.yaml`의 `mounts.left/right.xyz/rpy` |
-| 그리퍼 최대 개방 폭 | 같은 파일의 `grippers.left/right.max_opening_m` |
-| 그리퍼 메시·손가락 길이·두께·장착 형상 | `model/dual_piper.source.urdf`와 `piper_dual_description/meshes/`의 해당 메시 |
-| 센서·마운트 추가 | `config/robot.yaml`의 `attachments` 또는 원본 URDF에 고정 링크 추가 |
-| 특정 부품의 다면체 분할 조정 | `polyhedra.sections`의 링크 이름 또는 STL stem 항목 |
-| 다면체 생성 여유 | `polyhedra.margin_m` |
-| 1차 보호 구 위치·크기 | `joint_distance.protection`의 좌우 7개 `offsets_m`, `radii_m` |
-| 1차 정지·재개 간격 | `joint_distance.stop_clearance_m/resume_clearance_m` |
-| 장착 접촉을 허용할 링크 쌍 | attachment의 `touch_links` 또는 `allowed_collision_pairs` |
+아래 경로는 `collision_configurable/` 폴더 기준입니다. 설정값과 원본 모델을 수정한 뒤 아래의 공통 절차로 재생성합니다.
 
-단위: 위치·거리 m, 회전 rpy rad. `max_opening_m`은 기존 드라이버와 같은 **양쪽 손가락의 총 이동량**입니다. joint7에 +opening/2, joint8에 -opening/2를 적용합니다. 실제 손가락 안쪽 면 간 거리와 다를 수 있으므로 새 그리퍼에서는 닫힘 기준과 드라이버 피드백 의미를 확인하세요.
+| 바뀐 부분 | 수정할 파일 | 수정할 항목 |
+| --- | --- | --- |
+| 양팔 간격·높이·위치 | config/robot.yaml | mounts → left / right → xyz 값 변경. 순서: [x, y, z] |
+| 팔 설치 각도 | config/robot.yaml | mounts → left / right → rpy 값 변경 |
+| 그리퍼 최대 개방 폭 | config/robot.yaml | grippers → left / right → max_opening_m 값 변경 |
+| 그리퍼 외형·손가락 길이·두께 | piper_dual_description/meshes/ + model/dual_piper.source.urdf | 해당 STL 교체, 해당 링크의 visual / collision 메시 경로·장착 위치 수정 |
+| 센서·카메라·마운트 추가 | config/robot.yaml | attachments에 장착 링크(parent), 위치(xyz), 각도(rpy), 형상(geometry) 추가 |
+| 다면체 분할·충돌 여유 | config/robot.yaml | polyhedra → sections의 axis / cuts_m, margin_m 수정 |
+| 1차 보호 구 크기·중심 | config/robot.yaml | joint_distance → protection → left / right의 radii_m / offsets_m 수정 |
+| 1차 정지·재개 간격 | config/robot.yaml | joint_distance → stop_clearance_m / resume_clearance_m 수정 |
+
+- 시뮬 조절기: 각도 °(디그리), 손가락 이동 mm. 내부 계산용 rad·m로 자동 변환됩니다.
+- 설정 파일: 거리 m, 설치 각도 rpy는 rad. 예: 90° = 약 1.5708rad.
+- 센서·마운트는 config/attachments.example.yaml을 참고해 robot.yaml의 attachments에 복사합니다. 예시 파일만 수정하면 적용되지 않습니다.
+- 부품 외형을 바꾸면 1차 보호 구도 확인합니다. 추가 부품의 부피는 2차 다면체에서 검사합니다.
+- 조립상 맞닿는 링크는 해당 attachment의 touch_links 또는 allowed_collision_pairs로 지정합니다.
+
+`max_opening_m`은 기존 드라이버와 같은 **양쪽 손가락의 총 이동량**입니다. joint7에 +opening/2, joint8에 -opening/2를 적용합니다. 실제 손가락 안쪽 면 간 거리와 다를 수 있으므로 새 그리퍼에서는 닫힘 기준과 드라이버 피드백 의미를 확인하세요.
 최대 폭을 바꾸면 생성 URDF의 관절 범위, 1차·2차 입력 허용 범위, 슬라이더 범위가 함께 바뀝니다. 장착 원점이나 손가락 메시 자체의 크기는 자동으로 변하지 않습니다.
 
 기본은 좌우 각각 70mm입니다. 1차의 과거 80mm 고정 검사와 2차의 70mm 고정 검사를 제거하고 **실제로 로드한 URDF**의 범위를 읽도록 변경했습니다.
@@ -99,6 +106,21 @@ bash run_meshes_rviz.sh
 현재 팔 본체 내부의 자기 충돌 제외 정책은 유지합니다. **추가 장착물은 자동으로 같은 팔 제외 목록에 넣지 않습니다.** 기본적으로 다른 충돌 형상과 검사하며, 실제로 맞닿아야 하는 장착 링크만 `touch_links`로 명시합니다. 좌우 팔 사이 검사는 강제로 활성화됩니다.
 
 1차는 기존의 **관절 원점 6개와 그리퍼 중심의 보호 구 거리 검사**입니다. 부품 메시를 바꿨다고 보호 구가 자동으로 확대되지는 않습니다. 필요하면 보호 구 위치·반경을 조정하세요. 추가 센서·마운트의 부피는 2차에서 검사합니다. 1차와 2차는 같은 설치 배치와 관절 한계를 사용하지만 역할은 다릅니다.
+
+## 나중에 팔 아래에 리프트를 달면
+
+| 사용 방식 | 현재 반영 방법 |
+| --- | --- |
+| 높이를 조절한 뒤 멈춘 상태에서 팔 사용 | 현재 지원. config/robot.yaml의 mounts → 해당 팔 → xyz의 z를 실제 팔 베이스 높이로 수정하고 모델 재생성·재실행 |
+| 운전 중 리프트 높이가 계속 변함 | 현재 미지원. 리프트 관절 모델, 실제 높이 피드백, 이동 구간 검사를 추가해야 함 |
+
+설정으로 반영하는 방식은 고정한 높이에서 팔을 검사하는 것이며, 높이를 바꾸는 동안의 리프트 이동 자체는 검사하지 않습니다.
+
+예를 들어 오른팔 베이스를 world 기준 20cm 높이에 고정했다면 mounts.right.xyz를 `[0.0, -0.0875, 0.20]`으로 설정합니다. z는 이동량이 아니라 **공통 world 기준 팔 베이스의 실제 높이**입니다. 양팔 높이는 각각 설정할 수 있습니다.
+
+팔 베이스 높이 설정만으로 리프트 기둥·플랫폼의 충돌 형상이 생기지는 않습니다. 고정된 높이에서 사용하는 구성이라면 해당 구조물을 attachments 또는 원본 URDF의 고정 링크로 추가하고 조립상 접촉하는 링크만 검사 제외로 지정합니다.
+
+운전 중 움직이는 리프트를 지원할 때는 기존 PiPER 팔 모델과 다면체 검사 계산을 재사용할 수 있습니다. 다만 현재 모델 생성기는 PiPER의 기존 관절 구성만 허용하고 베이스를 고정 조인트로 처리하므로, 추가 축 허용·상태 입력을 확장해야 합니다. 1차와 2차에 같은 실제 높이를 반영하고, 피드백 누락 처리와 리프트 이동 중 충돌 검사·정지 연동도 추가해야 합니다. 설정의 z만 바꿔서는 움직이는 리프트에 대응할 수 없습니다.
 
 ## 검증
 

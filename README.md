@@ -32,3 +32,12 @@ bash run_moveit_real_guard.sh
 다면체 메시를 양팔에 동일하게 적용하며, **팔 하나당 31개 조각, 양팔 총 62개**입니다. 기존 박스 수동 편집은 시뮬 실행 명령에 `geometry:=boxes editor:=true`를 추가하면 사용할 수 있습니다.
 
 최초 설치와 나머지 실행 방법은 [충돌 방지 안내](collision/README.md)를 참고하세요.
+
+
+## 수정 가능한 충돌 방지 버전
+
+기존 collision 폴더를 보존한 별도 버전입니다. 양팔 배치, 그리퍼 최대 개방 폭, 부품 형상을 수정해 재사용할 수 있습니다.
+
+- [변경 사항별 수정 파일·항목 표와 실행 방법](collision_configurable/README.md#바뀌었을-때-무엇을-수정하나)
+- [리프트 추가 시 현재 지원 범위](collision_configurable/README.md#나중에-팔-아래에-리프트를-달면)
+- [시뮬·실물용 소스 ZIP 4개](artifacts/configurable/)
