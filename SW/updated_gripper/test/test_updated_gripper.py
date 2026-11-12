@@ -11,7 +11,7 @@ from piper_collision_guard.distance import DistanceModel, arm_state
 
 ROOT = Path(__file__).resolve().parents[1]
 DESCRIPTION = ROOT / 'piper_dual_description'
-STANDALONE = ROOT.parents[1] / 'HW/urdf/updated_gripper'
+STANDALONE = ROOT.parents[1] / 'HW/URDF/updated_gripper'
 
 
 def test_guard_model_and_meshes_match_published_replacement():

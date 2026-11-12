@@ -21,7 +21,7 @@ bash run_meshes_rviz.sh cereal:=true
 - [cereal_pour.yaml](piper_collision_guard/config/cereal_pour.yaml): 자세·속도·유지 시간
 - [dual_piper.urdf](piper_dual_description/urdf/dual_piper.urdf): 새 그리퍼 표시 모델
 - [dual_piper_meshes.urdf](piper_moveit_guard/config/dual_piper_meshes.urdf): MoveIt 다면체 충돌 모델
-- [독립 URDF 패키지](../../HW/urdf/updated_gripper): 새 그리퍼 베이스·플랜지 STL 포함
+- [독립 URDF 패키지](../../HW/URDF/updated_gripper): 새 그리퍼 베이스·플랜지 STL 포함
 - [CEREAL_POUR.md](CEREAL_POUR.md): 원본 작업의 상세 시퀀스·물체 설정·실물 경로 참고
 
 이 폴더는 시리얼 작업 백업의 소스를 보존합니다. 미리보기용 단일 합성 STL과 기존 배포 ZIP, 빌드·가상환경 파일은 제외했습니다. 실행에 필요한 URDF, STL, YAML, ROS 패키지, 도구는 포함합니다.

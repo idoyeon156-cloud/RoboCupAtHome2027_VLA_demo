@@ -11,7 +11,7 @@
 
 `run_meshes_real.sh`는 기존과 동일하게 1차 거리 검사 → 2차 MoveIt 검사로 연결합니다. 실물 기본값은 감시 모드이며 드라이버는 별도로 실행합니다.
 
-모델: [표시·거리 검사 URDF](piper_dual_description/urdf/dual_piper.urdf), [MoveIt URDF](piper_moveit_guard/config/dual_piper_meshes.urdf), [설정](config/robot.yaml). 독립 [새 그리퍼 URDF 패키지](../../HW/urdf/updated_gripper)와 같은 형상·장착 위치·관절 한계를 사용합니다. 베이스 간격 175 mm, 총 개방량 100 mm, J7 0~50 mm / J8 −50~0 mm입니다.
+모델: [표시·거리 검사 URDF](piper_dual_description/urdf/dual_piper.urdf), [MoveIt URDF](piper_moveit_guard/config/dual_piper_meshes.urdf), [설정](config/robot.yaml). 독립 [새 그리퍼 URDF 패키지](../../HW/URDF/updated_gripper)와 같은 형상·장착 위치·관절 한계를 사용합니다. 베이스 간격 175 mm, 총 개방량 100 mm, J7 0~50 mm / J8 −50~0 mm입니다.
 
 거리 방식은 기존처럼 관절 원점 6개와 그리퍼 기준점에 설정된 보호 구를 사용합니다. MoveIt 방식은 새 베이스와 플랜지를 포함한 양팔 64개 볼록 다면체 메시로 검사합니다.
 

@@ -5,7 +5,7 @@
 
 ```text
 HW/
-└── urdf/
+└── URDF/
     ├── original/           # 교체 전 URDF + STL (총 개방량 70 mm)
     └── updated_gripper/    # 교체 후 URDF + STL (새 베이스·플랜지, 100 mm)
 SW/
@@ -20,8 +20,8 @@ SW/
 
 | 폴더 | 내용 | 안내 |
 | --- | --- | --- |
-| [HW/urdf/original](HW/urdf/original/) | 교체 전 독립 URDF 패키지 | [모델 빌드](HW/urdf/original/README.md) |
-| [HW/urdf/updated_gripper](HW/urdf/updated_gripper/) | 교체 후 독립 URDF 패키지 | [모델 빌드](HW/urdf/updated_gripper/README.md) |
+| [HW/URDF/original](HW/URDF/original/) | 교체 전 독립 URDF 패키지 | [모델 빌드](HW/URDF/original/README.md) |
+| [HW/URDF/updated_gripper](HW/URDF/updated_gripper/) | 교체 후 독립 URDF 패키지 | [모델 빌드](HW/URDF/updated_gripper/README.md) |
 | [SW/original_gripper](SW/original_gripper/) | 교체 전 기준의 두 안전장치 | [설치·설정·실행](SW/original_gripper/README.md) |
 | [SW/updated_gripper](SW/updated_gripper/) | 교체 후 기준의 두 안전장치 | [설치·설정·실행](SW/updated_gripper/README.md) |
 | [SW/cereal_pour](SW/cereal_pour/) | 영점 → 양팔 준비 → 붓기 → 영점의 반복 시뮬레이션 | [실행](SW/cereal_pour/README.md) |
@@ -115,6 +115,6 @@ HW는 모델만 쓰는 경우를 위한 독립 ROS 패키지입니다. SW의 각
 | `collision_configurable/` | `SW/original_gripper/` |
 | `collision_updated_gripper/` | `SW/updated_gripper/` |
 | `cereal_pour_rviz/` | `SW/cereal_pour/` |
-| `robot_description/piper_dual_updated_gripper_description/` | `HW/urdf/updated_gripper/` |
+| `robot_description/piper_dual_updated_gripper_description/` | `HW/URDF/updated_gripper/` |
 | `artifacts/configurable/` | `SW/bundles/original_gripper/` |
 | `artifacts/updated_gripper/` | `SW/bundles/updated_gripper/` |
