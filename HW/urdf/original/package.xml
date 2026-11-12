@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>piper_dual_original_gripper_description</name>
+  <version>0.1.0</version>
+  <description>Side-by-side Piper arms with original grippers, 0.175 m base separation (0.095 m shell gap using STL geometry).</description>
+  <maintainer email="275096685+idoyeon156-cloud@users.noreply.github.com">idoyeon156-cloud</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
