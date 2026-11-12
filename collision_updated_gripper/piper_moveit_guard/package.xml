@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>piper_moveit_guard</name><version>0.1.0</version>
+  <description>Second-stage cross-arm convex mesh checker using MoveIt Bullet, with legacy FCL boxes.</description>
+  <maintainer email="275096685+idoyeon156-cloud@users.noreply.github.com">idoyeon156-cloud</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend><depend>moveit_core</depend><depend>urdfdom</depend><depend>moveit_ros_planning</depend>
+  <depend>moveit_msgs</depend><depend>sensor_msgs</depend><depend>std_msgs</depend><depend>std_srvs</depend><depend>visualization_msgs</depend>
+  <exec_depend>launch_ros</exec_depend><exec_depend>ament_index_python</exec_depend>
+  <exec_depend>piper_dual_description</exec_depend><exec_depend>piper_collision_guard</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend><exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend><exec_depend>rviz2</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
