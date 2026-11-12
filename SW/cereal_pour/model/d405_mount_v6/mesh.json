@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-08",
+  "triangles": 1618,
+  "mesh_volume_mm3": 25078.9,
+  "brep_volume_mm3": 25069.8,
+  "fov_87x58": {
+    "RGB_left": {
+      "mount_points_in_nominal_FOV": 0,
+      "mount_points_in_front_of_lens_plane": 4606,
+      "min_angle_margin_deg_vertical": 50.8
+    },
+    "right": {
+      "mount_points_in_nominal_FOV": 0,
+      "mount_points_in_front_of_lens_plane": 4606,
+      "min_angle_margin_deg_vertical": 50.8
+    }
+  },
+  "wrist_clearance_urdf": {
+    "camera_side_plus_x6": {
+      "link5": {
+        "min_dist_mm": 2.6,
+        "at_joint_deg": -90
+      },
+      "link4": {
+        "min_dist_mm": 64.4,
+        "at_joint_deg": [
+          -10,
+          60
+        ]
+      }
+    },
+    "camera_side_minus_x6": {
+      "link5": {
+        "min_dist_mm": 2.6,
+        "at_joint_deg": 0
+      },
+      "link4": {
+        "min_dist_mm": 64.4,
+        "at_joint_deg": [
+          -10,
+          -120
+        ]
+      }
+    }
+  },
+  "wall_thickness_mm": {
+    "p01": 1.04,
+    "min": 0.91,
+    "thinnest_locations_H": [
+      [
+        23.9,
+        14.9,
+        21.3
+      ],
+      [
+        23.7,
+        14.9,
+        21.5
+      ],
+      [
+        -23.9,
+        14.9,
+        21.3
+      ],
+      [
+        -23.7,
+        14.9,
+        21.5
+      ],
+      [
+        -23.9,
+        14.9,
+        20.9
+      ]
+    ],
+    "thinnest_values": [
+      0.91,
+      0.91,
+      0.91,
+      0.91,
+      0.93
+    ]
+  },
+  "orientations": {
+    "back plane down": {
+      "height_mm": 26.0,
+      "overhang_30deg_mm2": 541.7,
+      "overhang_45deg_mm2": 556.0,
+      "bed_contact_mm2": 2610.5
+    },
+    "rear end down (+y up)": {
+      "height_mm": 34.4,
+      "overhang_30deg_mm2": 2633.8,
+      "overhang_45deg_mm2": 2646.6,
+      "bed_contact_mm2": 521.7
+    },
+    "upright (+z up)": {
+      "height_mm": 87.9,
+      "overhang_30deg_mm2": 1403.5,
+      "overhang_45deg_mm2": 1895.5,
+      "bed_contact_mm2": 0.0
+    },
+    "upside down (-z up)": {
+      "height_mm": 87.9,
+      "overhang_30deg_mm2": 1398.1,
+      "overhang_45deg_mm2": 1591.1,
+      "bed_contact_mm2": 0.0
+    }
+  },
+  "plate": {
+    "file": "PiPER_D405_mount_v6_x2.3mf",
+    "sha256": "afaf4110de7a34e4cc6b7e91432d7846863a2d2e23bf11ca020adb55ed979308",
+    "parts": [
+      {
+        "name": "PiPER_D405_mount_1",
+        "min": [
+          58.56,
+          82.49,
+          0.0
+        ],
+        "max": [
+          118.0,
+          173.51,
+          26.0
+        ],
+        "volume_mm3": 25078.9
+      },
+      {
+        "name": "PiPER_D405_mount_2",
+        "min": [
+          138.0,
+          82.49,
+          0.0
+        ],
+        "max": [
+          197.44,
+          173.51,
+          26.0
+        ],
+        "volume_mm3": 25078.9
+      }
+    ],
+    "gap_mm": 20.0,
+    "print_size_mm": [
+      59.44,
+      91.03,
+      26.0
+    ],
+    "orientation": "back plane down"
+  },
+  "limits": [
+    "Nominal CAD, not a real optical view or calibration",
+    "Wrist check samples link4/link5 only, not link3, cables, or the other arm",
+    "link6 axial seat assumed at flange rear face",
+    "Not sliced or printed"
+  ]
+}

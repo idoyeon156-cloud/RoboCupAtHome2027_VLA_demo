@@ -64,7 +64,7 @@ def test_rviz_mesh_urls_are_encoded_and_files_exist():
     from urllib.parse import unquote, urlparse
     description = placed_description(URDF, .175, mesh_root=URDF.parents[1])
     meshes = ET.fromstring(description).findall('.//mesh')
-    assert len(meshes) == 44
+    assert len(meshes) == 48
     for mesh in meshes:
         uri = mesh.get('filename')
         assert uri.startswith('file:///') and ' ' not in uri

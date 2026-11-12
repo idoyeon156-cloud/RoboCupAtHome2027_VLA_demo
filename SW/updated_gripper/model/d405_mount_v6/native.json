@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-08",
+  "plate_u": [
+    -20.0,
+    21.0
+  ],
+  "plate_v": [
+    -21.0,
+    26.05
+  ],
+  "plate_t": 3.0,
+  "shelf_v": [
+    21.05,
+    26.05
+  ],
+  "shelf_w": [
+    -3.0,
+    23.0
+  ],
+  "camera_bottom_gap_mm": 0.05,
+  "column_top_x_at_shelf_bottom": [
+    -11.0,
+    11.0
+  ],
+  "column_base_x": [
+    -20.5,
+    20.5
+  ],
+  "base_z_mid_y": 25.0,
+  "wall_slope_du_dv": 0.3348,
+  "root_fillet_r": 3.0,
+  "pocket_side_wall": 6.0,
+  "volume_mm3": 25069.8,
+  "lumps": 1,
+  "solid": true,
+  "bbox_mm": [
+    [
+      -29.445,
+      14.0,
+      11.9
+    ],
+    [
+      30.0,
+      48.394,
+      99.805
+    ]
+  ],
+  "pair_checks": 519,
+  "hits": [],
+  "camera": {
+    "case_overlap_mm3": 0.0,
+    "plug_overlap_mm3": 0.0,
+    "case_gap_mm": 0.0,
+    "plug_gap_mm": 1.15
+  },
+  "fixed_min_dist_mm": {
+    "0": 0.1,
+    "1": 45.257,
+    "2": 17.918,
+    "3": 0.1,
+    "4": 0.1
+  },
+  "finger_side_min_dist_mm": {
+    "0": 43.031,
+    "50": 45.297,
+    "100": 51.735
+  },
+  "tool_overlap_mm3": {
+    "saddle_+45": {
+      "mount": 0.0,
+      "case": 0.0,
+      "plug": 0.0,
+      "gripper": 0.0
+    },
+    "saddle_-45": {
+      "mount": 0.0,
+      "case": 0.0,
+      "plug": 0.0,
+      "gripper": 0.0
+    },
+    "camera_0": {
+      "mount": 0.0,
+      "case": 0.0,
+      "plug": 0.0,
+      "gripper": 0.0
+    },
+    "camera_1": {
+      "mount": 0.0,
+      "case": 0.0,
+      "plug": 0.0,
+      "gripper": 0.0
+    }
+  },
+  "drop_in_max_overlap_mm3": 0.0,
+  "camera_slide_in_max_overlap_mm3": 0.0,
+  "nominal": {
+    "RGB_minus_TCP_H_mm": [
+      0.0,
+      -102.657,
+      74.737
+    ],
+    "tilt_deg": 20.6
+  },
+  "screw": {
+    "seat_r_mm": 33.0,
+    "wall_under_head_mm": 4.399999999999999,
+    "surface_points_H_mm": [
+      [
+        20.15,
+        19.4,
+        17.75
+      ],
+      [
+        -20.15,
+        19.4,
+        17.75
+      ]
+    ]
+  },
+  "mode": "save",
+  "saved": [
+    "PiPER_D405_mount_v6.f3d",
+    "PiPER_D405_mount_v6.step",
+    "PiPER_D405_mount_v6_assembly.stl"
+  ],
+  "new_document_active": "제목 없음",
+  "previous_modified_before_after": [
+    true,
+    true
+  ]
+}

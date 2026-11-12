@@ -6,7 +6,7 @@
 | 폴더 | 기준 모델 |
 | --- | --- |
 | [original_gripper/](original_gripper/) | 교체 전 그리퍼, 총 개방량 70 mm |
-| [updated_gripper/](updated_gripper/) | 교체 후 베이스·플랜지, 총 개방량 100 mm |
+| [updated_gripper/](updated_gripper/) | 교체 후 베이스·플랜지·양쪽 D405 마운트 v6, 총 개방량 100 mm |
 
 | 파일명에 들어가는 구분 | 실행 |
 | --- | --- |

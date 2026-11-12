@@ -27,6 +27,9 @@ grippers:
 polyhedra:
   margin_m: 0.005
   sections:
+    d405_mount_v6_assembly:
+      axis: 2
+      cuts_m: [30.0, 50.0, 70.0]
     link2:
       axis: 0
       cuts_m:
@@ -118,5 +121,24 @@ joint_distance:
       - 0.04
       - 0.04
       - 0.04
-attachments: []
+# CAD assembly coordinates in mm; see SENSOR_MOUNT.md for registration.
+attachments:
+  - name: left_d405_mount
+    parent: left_gripper_base
+    collision_parent: left_gripper_flange
+    xyz: [-0.0024, 0.0, -0.0169]
+    rpy: [1.5707963267948966, 0.0, -1.5707963267948966]
+    geometry:
+      mesh: package://piper_dual_description/meshes/d405_mount_v6_assembly.STL
+      scale: [0.001, 0.001, 0.001]
+    touch_links: [left_gripper_base, left_gripper_flange]
+  - name: right_d405_mount
+    parent: right_gripper_base
+    collision_parent: right_gripper_flange
+    xyz: [-0.0024, 0.0, -0.0169]
+    rpy: [1.5707963267948966, 0.0, -1.5707963267948966]
+    geometry:
+      mesh: package://piper_dual_description/meshes/d405_mount_v6_assembly.STL
+      scale: [0.001, 0.001, 0.001]
+    touch_links: [right_gripper_base, right_gripper_flange]
 allowed_collision_pairs: []

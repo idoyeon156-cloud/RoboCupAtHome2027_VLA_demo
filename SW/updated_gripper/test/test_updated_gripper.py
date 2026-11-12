@@ -53,4 +53,4 @@ def test_distance_guard_uses_replacement_opening_and_protection_frame():
         assert opening == .100
         with pytest.raises(ValueError):
             arm_state(names, [0.] * 6 + [.101], side, fk.max_opening[side])
-    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.095)
+    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.09378754555827531)

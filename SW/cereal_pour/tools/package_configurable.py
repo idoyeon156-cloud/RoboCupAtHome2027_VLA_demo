@@ -25,7 +25,7 @@ def package(out, cereal=False):
                   and not any(x.endswith('.egg-info') for x in p.parts)
                   and p.suffix not in ('.pyc','.pyo')]
     files += [p for p in ROOT.glob('run*.sh')]
-    files += [ROOT/x for x in ('README.md','VALIDATION.md','requirements.txt',
+    files += [ROOT/x for x in ('README.md','SENSOR_MOUNT.md','VALIDATION.md','requirements.txt',
                'tools/prepare_model.py','tools/generate_collision_boxes.py',
                'tools/generate_collision_meshes.py','tools/package_configurable.py')]
     if cereal:
@@ -34,7 +34,7 @@ def package(out, cereal=False):
         prefix=name+'/'
         start=f'''# {label} — 수정 가능한 버전
 
-이 ZIP에는 설정, 원본 URDF/STL, 다면체 재생성 도구 및 시뮬·실물용 실행 경로가 함께 들어 있습니다.
+이 ZIP에는 신형 그리퍼와 양쪽 D405 마운트 v6를 적용한 설정·URDF/STL·다면체 메시·보호 구·재생성 도구와 실행 경로가 들어 있습니다. 장착 형상과 검증 범위는 SENSOR_MOUNT.md를 참고하세요.
 압축을 푼 뒤 이 안내 파일이 있는 폴더에서 아래 순서로 실행합니다.
 
 ## 최초 환경 준비 (Ubuntu 22.04 / ROS 2 Humble)

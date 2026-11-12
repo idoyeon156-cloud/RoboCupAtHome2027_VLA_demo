@@ -10,7 +10,7 @@ URDF = Path(__file__).resolve().parents[2] / "piper_dual_description/urdf/dual_p
 def test_shipped_protection_configuration():
     path = Path(__file__).resolve().parents[1] / "config/protection.yaml"
     fk = DistanceModel(URDF, protection=yaml.safe_load(path.read_text()))
-    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.095)
+    assert fk.clearance(np.zeros(6), np.zeros(6)).distance == pytest.approx(.09378754555827531)
 
 
 def test_fk_base_offset_and_identical_orientation():

@@ -195,7 +195,7 @@ def prepare(config_path, output_root=ROOT):
     attachments=cfg['attachments']
     touch=[]
     for item in attachments:
-        if set(item)-{'name','parent','xyz','rpy','geometry','touch_links'}:
+        if set(item)-{'name','parent','xyz','rpy','geometry','touch_links','collision_parent'}:
             raise ValueError('Unknown attachment setting')
         name=item['name'];parent=item['parent']
         if not name or robot.find(f"link[@name='{name}']") is not None or robot.find(f"link[@name='{parent}']") is None:
@@ -207,7 +207,30 @@ def prepare(config_path, output_root=ROOT):
         joint=ET.SubElement(robot,'joint',name=name+'_fixed',type='fixed')
         ET.SubElement(joint,'parent',link=parent);ET.SubElement(joint,'child',link=name)
         origin(joint,item['xyz'],item['rpy'])
-        touch.extend((name,other) for other in item.get('touch_links',[]))
+        if item.get('collision_parent'):
+            # Put tool collision pieces on an existing rigid assembly link. The
+            # separate attachment link keeps its visual and FK frame only.
+            # Never cross an actuated joint when merging collision geometry.
+            target=item['collision_parent']
+            transform=np.eye(4)
+            transform[:3,:3]=rotation(item['rpy']);transform[:3,3]=vector(item['xyz'])
+            current=parent
+            while current!=target:
+                upstream=next((j for j in robot.findall('joint') if j.find('child').get('link')==current),None)
+                if upstream is None or upstream.get('type')!='fixed':
+                    raise ValueError('collision_parent must be an ancestor through fixed joints only')
+                pose=upstream.find('origin');step=np.eye(4)
+                if pose is not None:
+                    step[:3,:3]=rotation(list(map(float,pose.get('rpy','0 0 0').split())))
+                    step[:3,3]=list(map(float,pose.get('xyz','0 0 0').split()))
+                transform=step@transform;current=upstream.find('parent').get('link')
+            from scipy.spatial.transform import Rotation
+            for shape in list(link.findall('collision')):
+                link.remove(shape)
+                origin(shape,transform[:3,3],Rotation.from_matrix(transform[:3,:3]).as_euler('xyz'))
+                robot.find(f"link[@name='{target}']").append(shape)
+        else:
+            touch.extend((name,other) for other in item.get('touch_links',[]))
     # Duplicate names are invalid even for manually edited source URDFs.
     for tag in ('link','joint'):
         names=[e.get('name') for e in robot.findall(tag)]
@@ -280,7 +303,25 @@ def prepare(config_path, output_root=ROOT):
             if (a.startswith('left_') and b.startswith('right_')) or (b.startswith('left_') and a.startswith('right_')):
                 raise ValueError('Cross-arm exclusions are not supported')
             ET.SubElement(srdf,'disable_collisions',link1=a,link2=b,reason='ExplicitAttachmentContact')
-        distance=cfg['joint_distance'];protection=distance['protection']
+        distance=cfg['joint_distance'];protection=copy.deepcopy(distance['protection'])
+        # Keep the seven joint spheres and add cell spheres for every arm-mounted
+        # attachment. The whole collision AABB (including face interiors) is covered.
+        # Attachment frames follow FK, so wrist motion rotates these spheres too.
+        parents={j.find('child').get('link'):j.find('parent').get('link') for j in robot.findall('joint')}
+        for item in attachments:
+            ancestor=item['parent']
+            while ancestor not in core['left'] | core['right'] and ancestor in parents:
+                ancestor=parents[ancestor]
+            side=next((s for s in ('left','right') if ancestor in core[s]),None)
+            if side is None:
+                continue  # World fixtures are handled by MoveIt, not cross-arm distance.
+            geom=ET.Element('geometry');attachment_geometry(geom,item['geometry'])
+            mesh=geom.find('mesh')
+            pts=(mesh_triangles(resolve_mesh(mesh.get('filename'))).reshape(-1,3)
+                 * vector(mesh.get('scale','1 1 1').split(),positive=True)) if mesh is not None else primitive_points(geom)
+            protection[side].setdefault('attachment_covers',[]).append(dict(
+                frame=item['name'].removeprefix(side+'_'), bounds_min_m=pts.min(axis=0).tolist(),
+                bounds_max_m=pts.max(axis=0).tolist(), cell_size_m=.02, padding_m=.005))
         if set(protection)!={'left','right'}:
             raise ValueError('Configure both arms protection')
         for side in ('left','right'):

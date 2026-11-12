@@ -20,6 +20,18 @@ left:
   - 0.04
   - 0.04
   - 0.04
+  attachment_covers:
+  - frame: d405_mount
+    bounds_min_m:
+    - -0.02944486427307129
+    - 0.014
+    - 0.011899999618530274
+    bounds_max_m:
+    - 0.03
+    - 0.048393733978271486
+    - 0.09980513000488281
+    cell_size_m: 0.02
+    padding_m: 0.005
 right:
   offsets_m:
   - &id002
@@ -42,3 +54,15 @@ right:
   - 0.04
   - 0.04
   - 0.04
+  attachment_covers:
+  - frame: d405_mount
+    bounds_min_m:
+    - -0.02944486427307129
+    - 0.014
+    - 0.011899999618530274
+    bounds_max_m:
+    - 0.03
+    - 0.048393733978271486
+    - 0.09980513000488281
+    cell_size_m: 0.02
+    padding_m: 0.005

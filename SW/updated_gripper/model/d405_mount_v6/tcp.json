@@ -1,0 +1,123 @@
+{
+ "date": "2026-11-08",
+ "frame": "seat u image right, v image down, w camera forward; origin = D405 rear face centre of the common target",
+ "v6_mount": {
+  "plate_face_w": {
+   "offset_mm": -0.0,
+   "spread_mm": 0.0,
+   "area_mm2": 1700.0,
+   "tilt_from_axis_deg": 0.0
+  },
+  "shelf_top_v": {
+   "offset_mm": 21.05,
+   "spread_mm": 0.0,
+   "area_mm2": 941.3,
+   "tilt_from_axis_deg": 0.0
+  },
+  "holes": [
+   {
+    "u": -10.0,
+    "v": 0.0,
+    "r": 1.65
+   },
+   {
+    "u": 10.0,
+    "v": 0.0,
+    "r": 1.65
+   }
+  ]
+ },
+ "umi_v20_case": {
+  "rear_face_w": {
+   "offset_mm": 0.0,
+   "spread_mm": 0.0,
+   "area_mm2": 1272.0,
+   "tilt_from_axis_deg": 0.0
+  },
+  "bottom_v": {
+   "offset_mm": 20.9947,
+   "spread_mm": 0.0566,
+   "area_mm2": 526.2,
+   "tilt_from_axis_deg": 0.0028
+  },
+  "holes": [
+   {
+    "u": -10.0,
+    "v": -0.0,
+    "r": 1.25
+   },
+   {
+    "u": 10.0,
+    "v": -0.0,
+    "r": 1.25
+   }
+  ]
+ },
+ "camera_offset_on_v6_vs_umi_seat_mm": {
+  "u": 0.0,
+  "v": 0.0,
+  "w": -0.0,
+  "H": [
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "shelf_gap_to_camera_bottom_mm": 0.0553,
+ "tcp_H_mm": {
+  "registration": [
+   0.0,
+   154.9,
+   -2.4
+  ],
+  "piper_stock_pads_closed": [
+   0.0,
+   154.9,
+   -2.4
+  ],
+  "umi_pads_closed": [
+   0.0,
+   154.9,
+   -2.4
+  ]
+ },
+ "umi": {
+  "RGB_minus_TCP_H_mm": [
+   0.0,
+   -102.657,
+   74.737
+  ],
+  "distance_mm": 126.981,
+  "TCP_in_camera_xyz_mm": [
+   0.0,
+   33.839,
+   122.389
+  ],
+  "optical_axis_tilt_deg": 20.6
+ },
+ "piper_v6": {
+  "RGB_minus_TCP_H_mm": [
+   -0.0,
+   -102.657,
+   74.737
+  ],
+  "distance_mm": 126.981,
+  "TCP_in_camera_xyz_mm": [
+   0.0,
+   33.839,
+   122.389
+  ],
+  "optical_axis_tilt_deg": 20.6
+ },
+ "play_mm": {
+  "hole_r": 1.65,
+  "M3_r": 1.5,
+  "lateral_u_each_side": 0.15,
+  "note": "u play from hole clearance; v and roll set by pressing the camera onto the shelf (gap 0.05 otherwise)"
+ },
+ "limits": [
+  "Nominal CAD meshes; RGB optical centre is the URDF nominal, not calibrated",
+  "UMI side uses v20 saved meshes (camera and pads unchanged through v24)",
+  "Real print, screw play and optical calibration not checked"
+ ]
+}

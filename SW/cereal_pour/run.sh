@@ -21,6 +21,8 @@ shift
 source /opt/ros/humble/setup.bash
 if [[ -f "$variant_root/.venv/bin/activate" ]]; then
   source "$variant_root/.venv/bin/activate"
+elif [[ -f "$variant_root/../../.venv/bin/activate" ]]; then
+  source "$variant_root/../../.venv/bin/activate"
 fi
 python3 -c 'import pinocchio, numpy, scipy, yaml, rclpy' || {
   echo 'README.md의 프로젝트 가상환경 설치를 먼저 진행해 주세요.' >&2; exit 1;

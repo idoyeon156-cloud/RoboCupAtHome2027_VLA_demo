@@ -114,10 +114,12 @@ class DistanceModel:
         default_offsets = np.zeros((7, 3))
         default_offsets[-1, 2] = 0.1358
         self.covers = {}
+        self.attachment_covers = {}
         self.offsets = {}
         self.radii = {}
         for side in ("left", "right"):
             config = (protection or {}).get(side, {})
+            self.attachment_covers[side] = self.make_covers(side, config['attachment_covers']) if config.get('attachment_covers') else []
             if 'mesh_covers' in config:
                 self.covers[side] = self.make_covers(side, config['mesh_covers'])
                 self.radii[side] = np.concatenate([item[2] for item in self.covers[side]])
@@ -177,6 +179,11 @@ class DistanceModel:
                     points.append(local @ pose.rotation.T + pose.translation)
                     names.extend(labels)
                     radii.append(radius)
+                for frame, local, radius, labels in self.attachment_covers[side]:
+                    pose = self.data.oMf[frame]
+                    points.append(local @ pose.rotation.T + pose.translation)
+                    names.extend(labels)
+                    radii.append(radius)
                 result[side] = (np.concatenate(points), names, np.concatenate(radii))
                 continue
             placements = [self.data.oMf[f] for f in self.frames[side]]
@@ -191,6 +198,11 @@ class DistanceModel:
                     points.append((1-t) * original[i] + t * original[i+1])
                     names.append(f"{side}_segment{i+1}_sample{k}")
                     radii.append(max(self.radii[side][i], self.radii[side][i+1]))
+            for frame, local, radius, labels in self.attachment_covers[side]:
+                pose = self.data.oMf[frame]
+                points.extend(local @ pose.rotation.T + pose.translation)
+                names.extend(labels)
+                radii.extend(radius)
             result[side] = (np.asarray(points), names, np.asarray(radii))
         return result
 

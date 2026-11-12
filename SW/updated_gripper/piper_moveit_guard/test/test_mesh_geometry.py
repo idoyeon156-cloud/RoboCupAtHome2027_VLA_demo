@@ -48,7 +48,7 @@ def test_mesh_model_preserves_all_joints_visuals_and_both_arms():
     source=ET.parse(ROOT/'piper_dual_description/urdf/dual_piper.urdf').getroot()
     model=ET.parse(ROOT/'piper_moveit_guard/config/dual_piper_meshes.urdf').getroot()
     assert [ET.tostring(x).strip() for x in source.findall('joint')]==[ET.tostring(x).strip() for x in model.findall('joint')]
-    assert len(model.findall('link/collision'))==64
+    assert len(model.findall('link/collision'))==72
     for old,new in zip(source.findall('link'),model.findall('link')):
         assert ET.tostring(old.find('visual')).strip()==ET.tostring(new.find('visual')).strip() if old.find('visual') is not None else new.find('visual') is None
         for c in new.findall('collision'):

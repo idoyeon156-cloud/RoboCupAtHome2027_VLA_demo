@@ -7,12 +7,12 @@
 HW/
 └── URDF/
     ├── original/           # 교체 전 URDF + STL (총 개방량 70 mm)
-    └── updated_gripper/    # 교체 후 URDF + STL (새 베이스·플랜지, 100 mm)
+    └── updated_gripper/    # 교체 후 URDF + STL (새 베이스·플랜지·D405 마운트, 100 mm)
 SW/
 ├── original_gripper/       # 교체 전 모델: 조인트 거리 + MoveIt 메시 안전장치
 │   └── legacy/             # 초기 버전 소스와 미리보기 보존
-├── updated_gripper/        # 교체 후 모델: 조인트 거리 + MoveIt 메시 안전장치
-├── cereal_pour/            # 교체 후 모델: 씨리얼 붓기 RViz 연속 재생
+├── updated_gripper/        # 교체 후 모델 + 마운트: 조인트 거리 + MoveIt 메시 안전장치
+├── cereal_pour/            # 교체 후 모델 + 마운트: 씨리얼 붓기 RViz 연속 재생
 └── bundles/                # 각 안전장치의 시뮬·실물용 소스 ZIP
     ├── original_gripper/
     └── updated_gripper/
@@ -21,9 +21,9 @@ SW/
 | 폴더 | 내용 | 안내 |
 | --- | --- | --- |
 | [HW/URDF/original](HW/URDF/original/) | 교체 전 독립 URDF 패키지 | [모델 빌드](HW/URDF/original/README.md) |
-| [HW/URDF/updated_gripper](HW/URDF/updated_gripper/) | 교체 후 독립 URDF 패키지 | [모델 빌드](HW/URDF/updated_gripper/README.md) |
+| [HW/URDF/updated_gripper](HW/URDF/updated_gripper/) | 교체 후 그리퍼 + D405 마운트 독립 URDF 패키지 | [모델 빌드](HW/URDF/updated_gripper/README.md) |
 | [SW/original_gripper](SW/original_gripper/) | 교체 전 기준의 두 안전장치 | [설치·설정·실행](SW/original_gripper/README.md) |
-| [SW/updated_gripper](SW/updated_gripper/) | 교체 후 기준의 두 안전장치 | [설치·설정·실행](SW/updated_gripper/README.md) |
+| [SW/updated_gripper](SW/updated_gripper/) | 교체 후 그리퍼 + 마운트 기준의 두 안전장치 | [설치·설정·실행](SW/updated_gripper/README.md) |
 | [SW/cereal_pour](SW/cereal_pour/) | 영점 → 양팔 준비 → 붓기 → 영점의 반복 시뮬레이션 | [실행](SW/cereal_pour/README.md) |
 | [SW/bundles](SW/bundles/) | 대상 기기에서 빌드할 수 있는 소스 배포 ZIP | [ZIP 선택](SW/bundles/README.md) |
 
@@ -72,7 +72,7 @@ bash run_distance_rviz.sh       # 조인트 간 거리 안전장치
 bash run_meshes_rviz.sh         # MoveIt 메시 안전장치
 ```
 
-교체 후 URDF 기준:
+교체 후 그리퍼 + 마운트 URDF 기준:
 
 ```bash
 cd SW/updated_gripper
@@ -102,6 +102,8 @@ bash run_meshes_real.sh         # 1차 거리 → 2차 MoveIt 메시 검사
 ```
 
 기본값은 감시 모드이며 실제 드라이버는 별도로 실행합니다. 명령 차단 활성화, 피드백·목표 토픽, 래치 해제는 각 작업 공간 README에 있습니다.
+
+현재 `updated_gripper`는 신형 그리퍼와 양쪽 D405 마운트 v6를 포함합니다. 별도 마운트 버전 폴더는 만들지 않습니다. [장착 형상과 검증 범위](SW/updated_gripper/SENSOR_MOUNT.md)를 참고하세요.
 
 ## 모델과 소스 관리
 

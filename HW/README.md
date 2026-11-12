@@ -6,7 +6,7 @@ URDF와 STL은 [URDF/](URDF/) 안에서 교체 전·후로 구분합니다.
 HW/
 └── URDF/
     ├── original/           # 그리퍼 교체 전
-    └── updated_gripper/    # 그리퍼 교체 후
+    └── updated_gripper/    # 그리퍼 교체 후 + D405 마운트 v6
 ```
 
 | 모델 | 독립 ROS 패키지 |
