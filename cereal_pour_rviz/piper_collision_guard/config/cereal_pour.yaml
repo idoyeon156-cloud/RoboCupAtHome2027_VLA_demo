@@ -1,0 +1,13 @@
+# Empty-gripper demo for the 175 mm dual PiPER layout. Joint1–6 in degrees.
+bowl_arm_deg: [21.2, 91.1, -33.3, 47.7, -62.9, 63.5]
+bowl_opening_mm: 10
+box_opening_mm: 60
+right_waypoints:
+  ready: [-25.8, 71.7, -27.0, -37.1, -46.1, 27.7]
+  align: [-5.2, 79.9, -34.0, -7.9, -41.2, 6.0]
+  tilt_25: [-6.5, 77.2, -37.0, -11.2, -35.8, -15.9]
+  tilt_45: [-5.8, 76.3, -38.1, -10.5, -33.6, -36.2]
+  tilt_65: [-3.2, 75.6, -38.8, -6.1, -31.9, -59.8]
+pour_hold_s: 1.0
+joint_speed_deg_s: 10.0
+opening_speed_mm_s: 20.0

@@ -1,0 +1,876 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="dual_piper">
+  <link name="world" />
+  <link name="left_base_link">
+    <inertial>
+      <origin xyz="-0.00473641164191482 2.56829134630247E-05 0.041451518036016" rpy="0 0 0" />
+      <mass value="1.02" />
+      <inertia ixx="0.00267433" ixy="-0.00000073" ixz="-0.00017389" iyy="0.00282612" iyz="0.0000004" izz="0.00089624" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_base_link_box_1">
+      <origin xyz="-0.009250000119 0.000000000000 0.043000001460" rpy="0 0 0" />
+      <geometry>
+        <box size="0.108499998450 0.089999998212 0.096000002921" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_link1">
+    <inertial>
+      <origin xyz="0.00032 -0.00041 -0.00348" rpy="0 0 0" />
+      <mass value="0.71" />
+      <inertia ixx="0.00050027" ixy="0.00000078" ixz="0.00000626" iyy="0.00040879" iyz="0.00000462" izz="0.00045802" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link1.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link1_box_1">
+      <origin xyz="0.000054515898 0.002000000328 -0.006500006653" rpy="0 0 0" />
+      <geometry>
+        <box size="0.081863181889 0.087500000596 0.082999989614" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint1" type="revolute">
+    <origin xyz="0 0 0.123" rpy="0 0 0" />
+    <parent link="left_base_link" />
+    <child link="left_link1" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.618" upper="2.618" effort="100" velocity="5" />
+  </joint>
+  <link name="left_link2">
+    <inertial>
+      <origin xyz="0.21852 -0.00861 0.00126" rpy="0 0 0" />
+      <mass value="1.16" />
+      <inertia ixx="0.00111915" ixy="0.00182916" ixz="0.00019233" iyy="0.06763251" iyz="0.00000767" izz="0.067559" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link2.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link2_box_1">
+      <origin xyz="0.011768406406 -0.000460608157 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.096463187188 0.074081501669 0.107000002861" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_2">
+      <origin xyz="0.080000000000 -0.015085299861 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.060000000000 0.063879612018 0.076689551525" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_3">
+      <origin xyz="0.150000000000 -0.028418545926 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.100000000000 0.071498608352 0.051000001132" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_4">
+      <origin xyz="0.215000000000 -0.035783500099 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.050000000000 0.068059452725 0.099000001550" />
+      </geometry>
+    </collision>
+    <collision name="left_link2_box_5">
+      <origin xyz="0.275753833652 -0.015810325968 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.091507667303 0.105055215513 0.107000002861" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint2" type="revolute">
+    <origin xyz="0 0 0" rpy="1.5708 -0.1359 -3.1416" />
+    <parent link="left_link1" />
+    <child link="left_link2" />
+    <axis xyz="0 0 1" />
+    <limit lower="0" upper="3.14" effort="100" velocity="5" />
+  </joint>
+  <link name="left_link3">
+    <inertial>
+      <origin xyz="-0.01999 -0.14808 -0.00053" rpy="0 0 0" />
+      <mass value="0.5" />
+      <inertia ixx="0.01347608" ixy="0.00161034" ixz="0.00000066" iyy="0.00046377" iyz="0.00000162" izz="0.01363321" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link3.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link3_box_1">
+      <origin xyz="-0.024800702592 -0.197375971973 0.000033704564" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072610635791 0.044751943946 0.066926883757" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_2">
+      <origin xyz="-0.024808970513 -0.162500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072650000211 0.045000000000 0.067000000030" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_3">
+      <origin xyz="-0.021621182903 -0.105000000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044319928640 0.090000000000 0.054372137840" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_4">
+      <origin xyz="-0.015831744066 -0.047500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.056402421314 0.045000000000 0.089999998212" />
+      </geometry>
+    </collision>
+    <collision name="left_link3_box_5">
+      <origin xyz="-0.002789930146 -0.000015087761 0.000375000760" rpy="0 0 0" />
+      <geometry>
+        <box size="0.075413670026 0.069969824478 0.090749999732" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint3" type="revolute">
+    <origin xyz="0.28503 0 0" rpy="0 0 -1.7939" />
+    <parent link="left_link2" />
+    <child link="left_link3" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.967" upper="0" effort="100" velocity="5" />
+  </joint>
+  <link name="left_link4">
+    <inertial>
+      <origin xyz="0.00013 -0.00076 -0.00394" rpy="0 0 0" />
+      <mass value="0.38" />
+      <inertia ixx="0.00017844" ixy="0.00000062" ixz="0.00000067" iyy="0.00018914" iyz="0.00000408" izz="0.00014613" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link4.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link4_box_1">
+      <origin xyz="-0.002183924429 0.001864440385 -0.027999999225" rpy="0 0 0" />
+      <geometry>
+        <box size="0.071367848888 0.070721921957 0.025999998450" />
+      </geometry>
+    </collision>
+    <collision name="left_link4_box_2">
+      <origin xyz="0.000000000000 0.004333479330 -0.004000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069685312212 0.066499999017 0.042000000000" />
+      </geometry>
+    </collision>
+    <collision name="left_link4_box_3">
+      <origin xyz="0.000000012228 0.004333479330 0.020224096201" rpy="0 0 0" />
+      <geometry>
+        <box size="0.061695924857 0.066499999017 0.026448192403" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint4" type="revolute">
+    <origin xyz="-0.021984 -0.25075 0" rpy="1.5708 0 0" />
+    <parent link="left_link3" />
+    <child link="left_link4" />
+    <axis xyz="0 0 1" />
+    <limit lower="-1.745" upper="1.745" effort="100" velocity="5" />
+  </joint>
+  <link name="left_link5">
+    <inertial>
+      <origin xyz="0.00018 -0.06104 -0.00227" rpy="0 0 0" />
+      <mass value="0.383" />
+      <inertia ixx="0.00172318" ixy="0.00000259" ixz="0.00000010" iyy="0.00017936" iyz="0.00000990" izz="0.00171172" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link5.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link5_box_1">
+      <origin xyz="0.000000000000 -0.055000001788 -0.001779364478" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066998658925 0.080000003576 0.070558728987" />
+      </geometry>
+    </collision>
+    <collision name="left_link5_box_2">
+      <origin xyz="0.000000077300 0.001739356443 -0.028166522272" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069961834922 0.053478712887 0.018500000462" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint5" type="revolute">
+    <origin xyz="0 0 0" rpy="-1.5708 0 0" />
+    <parent link="left_link4" />
+    <child link="left_link5" />
+    <axis xyz="0 0 1" />
+    <limit lower="-1.22" upper="1.22" effort="100" velocity="5" />
+  </joint>
+  <link name="left_link6">
+    <inertial>
+      <origin xyz="-0.00003 0.00006 0.04618" rpy="0 0 0" />
+      <mass value="0.007" />
+      <inertia ixx="0.00152112" ixy="0.00000202" ixz="0.00000261" iyy="0.00138626" iyz="0.00000002" izz="0.00031152" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link6.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
+      </material>
+    </visual>
+    <collision name="left_link6_box_1">
+      <origin xyz="-0.000059885904 0.000009059906 -0.002000000095" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044943252802 0.044971613437 0.014000000190" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint6" type="revolute">
+    <origin xyz="8.8259E-05 -0.091 0" rpy="1.5708 0 0" />
+    <parent link="left_link5" />
+    <child link="left_link6" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.0944" upper="2.0944" effort="100" velocity="3" />
+  </joint>
+  <link name="left_gripper_flange">
+    <inertial>
+      <origin xyz="1.151691e-03 0.782428e-03 4.798051e-03" rpy="0 0 0" />
+      <mass value="0.04" />
+      <inertia ixx="9.935389e-06" ixy="0.0" ixz="0.0" iyy="10.508003e-06" iyz="0.0" izz="19.652873e-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/flange.STL" />
+      </geometry>
+    </visual>
+    <collision name="left_gripper_flange_box_1">
+      <origin xyz="-0.000004572794 0.000000000000 0.005250000395" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066990858167 0.066981712580 0.020500000790" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint6_to_gripper_flange" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="left_link6" />
+    <child link="left_gripper_flange" />
+  </joint>
+  <link name="left_gripper_base">
+    <inertial>
+      <origin xyz="-0.000183807162235591 8.05033155577911E-05 0.0321436689908876" rpy="0 0 0" />
+      <mass value="0.45" />
+      <inertia ixx="0.000466573035886" ixy="0" ixz="0" iyy="0.000208671755285" iyz="0" izz="0.000443517627645" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/gripper_base.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_gripper_base_box_1">
+      <origin xyz="-0.000181164256 -0.065007015854 0.055497754365" rpy="0 0 0" />
+      <geometry>
+        <box size="0.046167333039 0.044014031708 0.029000016153" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_2">
+      <origin xyz="-0.000054632810 -0.036000000000 0.035397786910" rpy="0 0 0" />
+      <geometry>
+        <box size="0.063057940026 0.034000000000 0.068800024747" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_3">
+      <origin xyz="-0.004515152425 0.000000000000 0.032397802801" rpy="0 0 0" />
+      <geometry>
+        <box size="0.084996031821 0.058000000000 0.074800046620" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_4">
+      <origin xyz="0.000082933138 0.036000000000 0.035397819262" rpy="0 0 0" />
+      <geometry>
+        <box size="0.063096354953 0.034000000000 0.068800036983" />
+      </geometry>
+    </collision>
+    <collision name="left_gripper_base_box_5">
+      <origin xyz="0.000209466148 0.065034311056 0.055497831363" rpy="0 0 0" />
+      <geometry>
+        <box size="0.046205750712 0.044068622112 0.029000040971" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint6_to_gripper_base" type="fixed">
+    <origin xyz="0 0 0.0045" rpy="0 0 0" />
+    <parent link="left_gripper_flange" />
+    <child link="left_gripper_base" />
+  </joint>
+  <link name="left_link7">
+    <inertial>
+      <origin xyz="0.00065123185041968 -0.0491929869131989 0.00972258769184025" rpy="0 0 0" />
+      <mass value="0.025" />
+      <inertia ixx="1.0831334372e-05" ixy="3.32108655243e-07" ixz="-5.17776964242e-08" iyy="5.43941050918e-06" iyz="1.75746071559e-06" izz="1.41828415054e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link7.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link7_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="left_link7_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint7" type="prismatic">
+    <origin xyz="0 0 0.138" rpy="1.5707963 0 0" />
+    <parent link="left_gripper_base" />
+    <child link="left_link7" />
+    <axis xyz="0 0 1" />
+    <limit lower="0" upper="0.05" effort="10" velocity="3" />
+  </joint>
+  <link name="left_link8">
+    <inertial>
+      <origin xyz="0.00065123185041968 -0.0491929869131989 0.00972258769184025" rpy="0 0 0" />
+      <mass value="0.025" />
+      <inertia ixx="1.0831334372e-05" ixy="3.32108655243e-07" ixz="-5.17776964242e-08" iyy="5.43941050918e-06" iyz="1.75746071559e-06" izz="1.41828415054e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link8.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="left_link8_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="left_link8_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_joint8" type="prismatic">
+    <origin xyz="0 0 0.138" rpy="1.5707963 0 -3.1415926" />
+    <parent link="left_gripper_base" />
+    <child link="left_link8" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-0.05" upper="0" effort="10" velocity="3" />
+  </joint>
+  <joint name="world_to_left_base" type="fixed">
+    <parent link="world" />
+    <child link="left_base_link" />
+    <origin xyz="0.0 0.0875 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+  <link name="right_base_link">
+    <inertial>
+      <origin xyz="-0.00473641164191482 2.56829134630247E-05 0.041451518036016" rpy="0 0 0" />
+      <mass value="1.02" />
+      <inertia ixx="0.00267433" ixy="-0.00000073" ixz="-0.00017389" iyy="0.00282612" iyz="0.0000004" izz="0.00089624" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_base_link_box_1">
+      <origin xyz="-0.009250000119 0.000000000000 0.043000001460" rpy="0 0 0" />
+      <geometry>
+        <box size="0.108499998450 0.089999998212 0.096000002921" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_link1">
+    <inertial>
+      <origin xyz="0.00032 -0.00041 -0.00348" rpy="0 0 0" />
+      <mass value="0.71" />
+      <inertia ixx="0.00050027" ixy="0.00000078" ixz="0.00000626" iyy="0.00040879" iyz="0.00000462" izz="0.00045802" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link1.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link1_box_1">
+      <origin xyz="0.000054515898 0.002000000328 -0.006500006653" rpy="0 0 0" />
+      <geometry>
+        <box size="0.081863181889 0.087500000596 0.082999989614" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint1" type="revolute">
+    <origin xyz="0 0 0.123" rpy="0 0 0" />
+    <parent link="right_base_link" />
+    <child link="right_link1" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.618" upper="2.618" effort="100" velocity="5" />
+  </joint>
+  <link name="right_link2">
+    <inertial>
+      <origin xyz="0.21852 -0.00861 0.00126" rpy="0 0 0" />
+      <mass value="1.16" />
+      <inertia ixx="0.00111915" ixy="0.00182916" ixz="0.00019233" iyy="0.06763251" iyz="0.00000767" izz="0.067559" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link2.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link2_box_1">
+      <origin xyz="0.011768406406 -0.000460608157 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.096463187188 0.074081501669 0.107000002861" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_2">
+      <origin xyz="0.080000000000 -0.015085299861 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.060000000000 0.063879612018 0.076689551525" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_3">
+      <origin xyz="0.150000000000 -0.028418545926 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.100000000000 0.071498608352 0.051000001132" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_4">
+      <origin xyz="0.215000000000 -0.035783500099 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.050000000000 0.068059452725 0.099000001550" />
+      </geometry>
+    </collision>
+    <collision name="right_link2_box_5">
+      <origin xyz="0.275753833652 -0.015810325968 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.091507667303 0.105055215513 0.107000002861" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint2" type="revolute">
+    <origin xyz="0 0 0" rpy="1.5708 -0.1359 -3.1416" />
+    <parent link="right_link1" />
+    <child link="right_link2" />
+    <axis xyz="0 0 1" />
+    <limit lower="0" upper="3.14" effort="100" velocity="5" />
+  </joint>
+  <link name="right_link3">
+    <inertial>
+      <origin xyz="-0.01999 -0.14808 -0.00053" rpy="0 0 0" />
+      <mass value="0.5" />
+      <inertia ixx="0.01347608" ixy="0.00161034" ixz="0.00000066" iyy="0.00046377" iyz="0.00000162" izz="0.01363321" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link3.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link3_box_1">
+      <origin xyz="-0.024800702592 -0.197375971973 0.000033704564" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072610635791 0.044751943946 0.066926883757" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_2">
+      <origin xyz="-0.024808970513 -0.162500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.072650000211 0.045000000000 0.067000000030" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_3">
+      <origin xyz="-0.021621182903 -0.105000000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044319928640 0.090000000000 0.054372137840" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_4">
+      <origin xyz="-0.015831744066 -0.047500000000 0.000000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.056402421314 0.045000000000 0.089999998212" />
+      </geometry>
+    </collision>
+    <collision name="right_link3_box_5">
+      <origin xyz="-0.002789930146 -0.000015087761 0.000375000760" rpy="0 0 0" />
+      <geometry>
+        <box size="0.075413670026 0.069969824478 0.090749999732" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint3" type="revolute">
+    <origin xyz="0.28503 0 0" rpy="0 0 -1.7939" />
+    <parent link="right_link2" />
+    <child link="right_link3" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.967" upper="0" effort="100" velocity="5" />
+  </joint>
+  <link name="right_link4">
+    <inertial>
+      <origin xyz="0.00013 -0.00076 -0.00394" rpy="0 0 0" />
+      <mass value="0.38" />
+      <inertia ixx="0.00017844" ixy="0.00000062" ixz="0.00000067" iyy="0.00018914" iyz="0.00000408" izz="0.00014613" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link4.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link4_box_1">
+      <origin xyz="-0.002183924429 0.001864440385 -0.027999999225" rpy="0 0 0" />
+      <geometry>
+        <box size="0.071367848888 0.070721921957 0.025999998450" />
+      </geometry>
+    </collision>
+    <collision name="right_link4_box_2">
+      <origin xyz="0.000000000000 0.004333479330 -0.004000000000" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069685312212 0.066499999017 0.042000000000" />
+      </geometry>
+    </collision>
+    <collision name="right_link4_box_3">
+      <origin xyz="0.000000012228 0.004333479330 0.020224096201" rpy="0 0 0" />
+      <geometry>
+        <box size="0.061695924857 0.066499999017 0.026448192403" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint4" type="revolute">
+    <origin xyz="-0.021984 -0.25075 0" rpy="1.5708 0 0" />
+    <parent link="right_link3" />
+    <child link="right_link4" />
+    <axis xyz="0 0 1" />
+    <limit lower="-1.745" upper="1.745" effort="100" velocity="5" />
+  </joint>
+  <link name="right_link5">
+    <inertial>
+      <origin xyz="0.00018 -0.06104 -0.00227" rpy="0 0 0" />
+      <mass value="0.383" />
+      <inertia ixx="0.00172318" ixy="0.00000259" ixz="0.00000010" iyy="0.00017936" iyz="0.00000990" izz="0.00171172" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link5.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link5_box_1">
+      <origin xyz="0.000000000000 -0.055000001788 -0.001779364478" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066998658925 0.080000003576 0.070558728987" />
+      </geometry>
+    </collision>
+    <collision name="right_link5_box_2">
+      <origin xyz="0.000000077300 0.001739356443 -0.028166522272" rpy="0 0 0" />
+      <geometry>
+        <box size="0.069961834922 0.053478712887 0.018500000462" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint5" type="revolute">
+    <origin xyz="0 0 0" rpy="-1.5708 0 0" />
+    <parent link="right_link4" />
+    <child link="right_link5" />
+    <axis xyz="0 0 1" />
+    <limit lower="-1.22" upper="1.22" effort="100" velocity="5" />
+  </joint>
+  <link name="right_link6">
+    <inertial>
+      <origin xyz="-0.00003 0.00006 0.04618" rpy="0 0 0" />
+      <mass value="0.007" />
+      <inertia ixx="0.00152112" ixy="0.00000202" ixz="0.00000261" iyy="0.00138626" iyz="0.00000002" izz="0.00031152" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link6.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
+      </material>
+    </visual>
+    <collision name="right_link6_box_1">
+      <origin xyz="-0.000059885904 0.000009059906 -0.002000000095" rpy="0 0 0" />
+      <geometry>
+        <box size="0.044943252802 0.044971613437 0.014000000190" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint6" type="revolute">
+    <origin xyz="8.8259E-05 -0.091 0" rpy="1.5708 0 0" />
+    <parent link="right_link5" />
+    <child link="right_link6" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.0944" upper="2.0944" effort="100" velocity="3" />
+  </joint>
+  <link name="right_gripper_flange">
+    <inertial>
+      <origin xyz="1.151691e-03 0.782428e-03 4.798051e-03" rpy="0 0 0" />
+      <mass value="0.04" />
+      <inertia ixx="9.935389e-06" ixy="0.0" ixz="0.0" iyy="10.508003e-06" iyz="0.0" izz="19.652873e-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/flange.STL" />
+      </geometry>
+    </visual>
+    <collision name="right_gripper_flange_box_1">
+      <origin xyz="-0.000004572794 0.000000000000 0.005250000395" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066990858167 0.066981712580 0.020500000790" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint6_to_gripper_flange" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="right_link6" />
+    <child link="right_gripper_flange" />
+  </joint>
+  <link name="right_gripper_base">
+    <inertial>
+      <origin xyz="-0.000183807162235591 8.05033155577911E-05 0.0321436689908876" rpy="0 0 0" />
+      <mass value="0.45" />
+      <inertia ixx="0.000466573035886" ixy="0" ixz="0" iyy="0.000208671755285" iyz="0" izz="0.000443517627645" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/gripper_base.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_gripper_base_box_1">
+      <origin xyz="-0.000181164256 -0.065007015854 0.055497754365" rpy="0 0 0" />
+      <geometry>
+        <box size="0.046167333039 0.044014031708 0.029000016153" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_2">
+      <origin xyz="-0.000054632810 -0.036000000000 0.035397786910" rpy="0 0 0" />
+      <geometry>
+        <box size="0.063057940026 0.034000000000 0.068800024747" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_3">
+      <origin xyz="-0.004515152425 0.000000000000 0.032397802801" rpy="0 0 0" />
+      <geometry>
+        <box size="0.084996031821 0.058000000000 0.074800046620" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_4">
+      <origin xyz="0.000082933138 0.036000000000 0.035397819262" rpy="0 0 0" />
+      <geometry>
+        <box size="0.063096354953 0.034000000000 0.068800036983" />
+      </geometry>
+    </collision>
+    <collision name="right_gripper_base_box_5">
+      <origin xyz="0.000209466148 0.065034311056 0.055497831363" rpy="0 0 0" />
+      <geometry>
+        <box size="0.046205750712 0.044068622112 0.029000040971" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint6_to_gripper_base" type="fixed">
+    <origin xyz="0 0 0.0045" rpy="0 0 0" />
+    <parent link="right_gripper_flange" />
+    <child link="right_gripper_base" />
+  </joint>
+  <link name="right_link7">
+    <inertial>
+      <origin xyz="0.00065123185041968 -0.0491929869131989 0.00972258769184025" rpy="0 0 0" />
+      <mass value="0.025" />
+      <inertia ixx="1.0831334372e-05" ixy="3.32108655243e-07" ixz="-5.17776964242e-08" iyy="5.43941050918e-06" iyz="1.75746071559e-06" izz="1.41828415054e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link7.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link7_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="right_link7_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint7" type="prismatic">
+    <origin xyz="0 0 0.138" rpy="1.5707963 0 0" />
+    <parent link="right_gripper_base" />
+    <child link="right_link7" />
+    <axis xyz="0 0 1" />
+    <limit lower="0" upper="0.05" effort="10" velocity="3" />
+  </joint>
+  <link name="right_link8">
+    <inertial>
+      <origin xyz="0.00065123185041968 -0.0491929869131989 0.00972258769184025" rpy="0 0 0" />
+      <mass value="0.025" />
+      <inertia ixx="1.0831334372e-05" ixy="3.32108655243e-07" ixz="-5.17776964242e-08" iyy="5.43941050918e-06" iyz="1.75746071559e-06" izz="1.41828415054e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://piper_dual_description/meshes/link8.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="right_link8_box_1">
+      <origin xyz="0.000000000000 -0.068249999285 0.014249999891" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066000001729 0.026499998569 0.034499999592" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_2">
+      <origin xyz="0.000000000000 -0.050000000000 0.012627865066" rpy="0 0 0" />
+      <geometry>
+        <box size="0.058898568649 0.030000000000 0.031255729942" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_3">
+      <origin xyz="0.000000000000 -0.030000000000 0.008128658067" rpy="0 0 0" />
+      <geometry>
+        <box size="0.045351230720 0.030000000000 0.024483481237" />
+      </geometry>
+    </collision>
+    <collision name="right_link8_box_4">
+      <origin xyz="-0.000003427649 -0.010000000000 0.004801620023" rpy="0 0 0" />
+      <geometry>
+        <box size="0.038713730364 0.030000000000 0.019603240046" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_joint8" type="prismatic">
+    <origin xyz="0 0 0.138" rpy="1.5707963 0 -3.1415926" />
+    <parent link="right_gripper_base" />
+    <child link="right_link8" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-0.05" upper="0" effort="10" velocity="3" />
+  </joint>
+  <joint name="world_to_right_base" type="fixed">
+    <parent link="world" />
+    <child link="right_base_link" />
+    <origin xyz="0.0 -0.0875 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+</robot>
