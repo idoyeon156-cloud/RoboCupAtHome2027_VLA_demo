@@ -148,8 +148,7 @@ def main(args=None):
             color = (1., .12, .12, .28) if s.blocked else (.1, .85, .3, .22)
             array = MarkerArray()
             radii_by_name = {}
-            for side in ('left', 'right'):
-                centers, names, radii = points[side]
+            for side, (centers, names, radii) in points.items():
                 radii_by_name.update(zip(names, radii))
                 for i, radius in enumerate(np.unique(radii)):
                     m = self.marker(f'{side}_requested_spheres', i, Marker.SPHERE_LIST)

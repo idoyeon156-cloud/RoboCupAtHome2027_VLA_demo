@@ -23,6 +23,12 @@ def test_actual_moveit_service_checks_mount(tmp_path, overlap):
     from piper_collision_guard.collision_model import load_model
     from prepare_model import mesh_triangles
     description, _, _ = load_model(ROOT/'piper_moveit_guard')
+    # Keep the mount-only regression independent of the separate fixed-post tests.
+    robot=ET.fromstring(description)
+    post=robot.find("link[@name='rear_profile_3030']")
+    if post is not None:
+        for collision in list(post.findall('collision')):post.remove(collision)
+    description=ET.tostring(robot,encoding='unicode')
     if overlap:
         robot = ET.fromstring(description)
         fk = pin.buildModelFromXML(description); data = fk.createData()

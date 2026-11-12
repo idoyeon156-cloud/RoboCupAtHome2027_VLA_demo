@@ -1,6 +1,6 @@
 {
-  "source_sha256": "b97e81445ce989a3df271f35b22f3194f56b344e971009ddbb6287893391d688",
-  "config_sha256": "51b1d113a927ae35ffa72e32194b2a64d131025a5b18d1ea47d9ed98e97c974c",
+  "source_sha256": "17dd6a7d5312eb550e3db4511cb945a922cd1297487db1e374636721b0c36f0d",
+  "config_sha256": "9329c6967363a0f85a8f2cec4bd37aa4dee80897c47fcaca16ab3850467f77ce",
   "margin_m": 0.005,
   "parts": {
     "left_base_link:1": {
@@ -47546,6 +47546,10 @@
           -0.006620999599425699
         ]
       ]
+    },
+    "rear_profile_3030:1": {
+      "file": "eff33f527ed155ce0bb7.stl",
+      "support_planes_m": []
     }
   },
   "mesh_inputs": {
@@ -47563,10 +47567,10 @@
     "piper_dual_description/meshes/link8.STL": "3f88d534a85e28a33ef7d2061adacbd1d25214aa9325f9e464aad0f9e4b74606"
   },
   "files": {
-    "piper_dual_description/urdf/dual_piper.urdf": "e20c80ec8cef70500b4cc77209af2673042df3cb707591bd50467e8ca34d7684",
-    "piper_moveit_guard/config/dual_piper_meshes.urdf": "e26e4f0a57b770ccd098f41f4d05c30190dd99457fc3b1bd84c0da7d260b0449",
+    "piper_dual_description/urdf/dual_piper.urdf": "79c150619c8739385e4592982ccd47dec8fb866d4e4599e7f5ab1a7a51c8e4a1",
+    "piper_moveit_guard/config/dual_piper_meshes.urdf": "15354f20936c74649b5706ae59c14fc18b1d88169c3f694693e2db7ff705eb23",
     "piper_moveit_guard/config/dual_piper.srdf": "9fbeb19c53c5cb6231d366ef4c8ad92135e42c9e58a1415fcbd4f9a086e893f4",
-    "piper_collision_guard/config/protection.yaml": "65ceede955184992604ddf534d7679c294b64233f81e35180cba261bf277c539",
+    "piper_collision_guard/config/protection.yaml": "b4a6a5e652fbf469f57868166646e5355d005a1d96a3c316cc6f462d5ac1efcd",
     "piper_collision_guard/config/guard.yaml": "da04a1685fe72f369ffd78492199fd7b8f41e3dd633cfe25d8eb3b01374189dd",
     "piper_moveit_guard/meshes/collision/159bd40e021b15f3e9c4_part2.stl": "77d1bb581a3fdb1e2a377dada610db23127ec9d17124da7af9be1c1d6c8f2323",
     "piper_moveit_guard/meshes/collision/bdba9736f1054cbf52fa_part1.stl": "19945633fea31ecb2fbc5bd0ca010e08b39f56dfb2129141809a2779cceac0f0",
@@ -47588,6 +47592,7 @@
     "piper_moveit_guard/meshes/collision/28e86a9938f8ff9fb114_part1.stl": "1bfa479df49f4358e6e1a5ba29d33f6cc90648f98b557e9aebb23a4f4e5ad84f",
     "piper_moveit_guard/meshes/collision/7c69c4cbe8f5dc883ddc_part2.stl": "77d1bb581a3fdb1e2a377dada610db23127ec9d17124da7af9be1c1d6c8f2323",
     "piper_moveit_guard/meshes/collision/6ef846b30d5c7501fb78_part1.stl": "43205ae9d6b1b378bcdf282b74a6344b95e910e1bab1b631139eb67a84ee6371",
+    "piper_moveit_guard/meshes/collision/eff33f527ed155ce0bb7.stl": "0172013c4e7e342b9048c96e87e734279dbaae184c9c70393a811a79433207da",
     "piper_moveit_guard/meshes/collision/cb3c5a38b7d9947cc64a_part1.stl": "cb21c28ef2c56ff6c62d7bbea0ec40d3a5c2742f66517e973e99dc1ae941111b",
     "piper_moveit_guard/meshes/collision/7c69c4cbe8f5dc883ddc_part1.stl": "60dd4db63013708611a91f39ce1d808933f449d8c14009f706e9a5dcab59e6c7",
     "piper_moveit_guard/meshes/collision/3ab6d3e327deb6b19abf_part2.stl": "88d271db942ee3b764f7e5f3fdc61376b1327ea5235cdfa61a33e3023ce1bd2e",

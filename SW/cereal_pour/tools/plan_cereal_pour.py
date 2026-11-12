@@ -81,11 +81,11 @@ def preflight(kinematics, config, bowl_geometry, box_geometry, urdf):
     geometry = pin.buildGeomFromUrdf(model, str(urdf), pin.GeometryType.COLLISION,
                                     package_dirs=[str(ROOT)])
     geom_data = geometry.createData()
-    grouped = {side: [] for side in SIDES}
+    grouped = {side: [] for side in (*SIDES, 'environment')}
     for index, obj in enumerate(geometry.geometryObjects):
         side = obj.name.split('_', 1)[0]
-        if side not in grouped:
-            raise ValueError(f'Unhandled collision geometry {obj.name}')
+        if side not in SIDES:
+            side = 'environment'
         obj.geometry.buildConvexHull(True, 'Qt')
         grouped[side].append((index, obj.name, obj.geometry.convex))
 
@@ -127,11 +127,19 @@ def preflight(kinematics, config, bowl_geometry, box_geometry, urdf):
                 for j, right, b in grouped['right']:
                     if intersects(a, transforms[i], b, transforms[j]):
                         raise ValueError(f'{label}: {left} touches {right} ({fraction:.0%})')
+            for i, name, a in grouped['environment']:
+                for side in SIDES:
+                    for j, arm_name, b in grouped[side]:
+                        if intersects(a, transforms[i], b, transforms[j]):
+                            raise ValueError(f'{label}: {arm_name} touches {name} ({fraction:.0%})')
             if payload:
                 bowl_tf = attached('left', bowl_rotation, bowl_offset)
                 box_tf = attached('right', BOX_GRIP, box_offset)
                 if intersects(bowl, bowl_tf, box, box_tf):
                     raise ValueError(f'{label}: virtual bowl touches virtual box ({fraction:.0%})')
+                for i, name, shape in grouped['environment']:
+                    if intersects(bowl, bowl_tf, shape, transforms[i]) or intersects(box, box_tf, shape, transforms[i]):
+                        raise ValueError(f'{label}: held object touches {name} ({fraction:.0%})')
                 for side, obj_name, obj, obj_tf in (
                     ('right', 'virtual bowl', bowl, bowl_tf), ('left', 'virtual box', box, box_tf)
                 ):

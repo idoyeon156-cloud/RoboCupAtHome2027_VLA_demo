@@ -13,7 +13,9 @@ BUNDLES=[
  ('dual_piper_meshes_real_configurable','run_meshes_real.sh','조인트 거리 → MoveIt 다면체 통합 실물용')]
 
 
-CEREAL_BUNDLE = ('dual_piper_cereal_pour_real', 'run_cereal_real.sh', '양팔 시리얼 붓기 실물용')
+CEREAL_BUNDLES = [
+ ('dual_piper_cereal_pour_rviz', 'run_cereal_rviz.sh', '양팔 알파·파지·붓기 RViz 시뮬레이션'),
+ ('dual_piper_cereal_pour_real', 'run_cereal_real.sh', '양팔 알파·파지·붓기 실물용')]
 
 
 def package(out, cereal=False):
@@ -25,16 +27,16 @@ def package(out, cereal=False):
                   and not any(x.endswith('.egg-info') for x in p.parts)
                   and p.suffix not in ('.pyc','.pyo')]
     files += [p for p in ROOT.glob('run*.sh')]
-    files += [ROOT/x for x in ('README.md','SENSOR_MOUNT.md','VALIDATION.md','requirements.txt',
+    files += [ROOT/x for x in ('README.md','SENSOR_MOUNT.md','REAR_PROFILE.md','VALIDATION.md','requirements.txt',
                'tools/prepare_model.py','tools/generate_collision_boxes.py',
-               'tools/generate_collision_meshes.py','tools/package_configurable.py')]
+               'tools/generate_collision_meshes.py','tools/package_configurable.py','tools/plan_cereal_task.py','CEREAL_TASK.md')]
     if cereal:
-        files += [ROOT/'CEREAL_POUR.md', ROOT/'tools/plan_cereal_pour.py']
-    for name,entry,label in ([CEREAL_BUNDLE] if cereal else BUNDLES):
+        files += [ROOT/'SETUP.md', ROOT/'CEREAL_POUR.md', ROOT/'CEREAL_TASK.md', ROOT/'tools/plan_cereal_pour.py', ROOT/'tools/plan_cereal_task.py']
+    for name,entry,label in (CEREAL_BUNDLES if cereal else BUNDLES):
         prefix=name+'/'
         start=f'''# {label} — 수정 가능한 버전
 
-이 ZIP에는 신형 그리퍼와 양쪽 D405 마운트 v6를 적용한 설정·URDF/STL·다면체 메시·보호 구·재생성 도구와 실행 경로가 들어 있습니다. 장착 형상과 검증 범위는 SENSOR_MOUNT.md를 참고하세요.
+이 ZIP에는 신형 그리퍼와 양쪽 D405 마운트 v6를 적용한 설정·URDF/STL·다면체 메시·보호 구·재생성 도구와 실행 경로가 들어 있습니다. 마운트와 고정 3030 기둥의 형상·검증 범위는 SENSOR_MOUNT.md와 REAR_PROFILE.md를 참고하세요.
 압축을 푼 뒤 이 안내 파일이 있는 폴더에서 아래 순서로 실행합니다.
 
 ## 최초 환경 준비 (Ubuntu 22.04 / ROS 2 Humble)
@@ -72,7 +74,7 @@ bash {entry}
 한 작업 공간 안에서는 시뮬과 실물용이 같은 생성 모델을 공유합니다. 시뮬은 하나씩 실행하세요.
 '''
         if cereal:
-            start += '\n시리얼 붓기 시작·정지 및 물체 설정은 CEREAL_POUR.md를 참고하세요.\n'
+            start += '\n시리얼 붓기 시작·정지 및 물체 설정은 CEREAL_TASK.md를 참고하세요.\n'
         with zipfile.ZipFile(out/(name+'.zip'),'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
             for p in sorted(set(files)):
                 z.write(p,prefix+p.relative_to(ROOT).as_posix())
@@ -87,6 +89,6 @@ bash {entry}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,default=ROOT.parent/'bundles/cereal_pour')
-    parser.add_argument('--cereal', action='store_true', help='Build only the cereal pouring deployment ZIP')
+    parser.add_argument('--cereal', action='store_true', help='Build the alpha-based cereal simulation and real deployment ZIPs')
     args = parser.parse_args()
     package(args.output, args.cereal)

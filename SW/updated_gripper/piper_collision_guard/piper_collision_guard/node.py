@@ -47,7 +47,7 @@ class CollisionGuard(Node):
             raise ValueError("enforce requires geometry_confirmed:=true after calibrating protective spheres and stopping clearance")
         with open(c["protection_path"], encoding="utf-8") as stream:
             protection = yaml.safe_load(stream)
-        if not isinstance(protection, dict) or set(protection) != {"left", "right"}:
+        if not isinstance(protection, dict) or set(protection) - {"environment"} != {"left", "right"}:
             raise ValueError("protection YAML must configure both left and right")
         self.fk = DistanceModel(c["urdf_path"], c["link_samples"], protection)
         if c["enforce"] and any(np.any(self.fk.radii[s] <= 0) for s in ("left", "right")):

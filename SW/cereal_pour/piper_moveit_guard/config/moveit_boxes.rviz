@@ -36,6 +36,13 @@ Visualization Manager:
       Value: /moveit_guard/boxes
       Reliability Policy: Reliable
       Depth: 1
+  - Class: rviz_default_plugins/MarkerArray
+    Name: Cereal objects and phase
+    Enabled: true
+    Topic:
+      Value: /cereal_task/objects
+      Reliability Policy: Reliable
+      Depth: 1
   Tools:
   - Class: rviz_default_plugins/Interact
   - Class: rviz_default_plugins/MoveCamera

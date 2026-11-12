@@ -35,6 +35,30 @@ for arg in "$@"; do
   esac
 done
 python3 tools/prepare_model.py --check
+# Default continuous playback is regenerated from object settings when needed.
+# Explicit sequence_path remains available for legacy or separately generated paths.
+if [[ "$mode" == meshes_demo || "$mode" == meshes_real ]]; then
+  cereal_requested=false
+  custom_sequence=false
+  task_config="$variant_root/config/cereal_task.yaml"
+  launch_args=()
+  for arg in "$@"; do
+    case "$arg" in
+      cereal:=true) cereal_requested=true; launch_args+=("$arg") ;;
+      sequence_path:=*) custom_sequence=true; launch_args+=("$arg") ;;
+      task_config:=*) task_config="${arg#task_config:=}" ;;
+      *) launch_args+=("$arg") ;;
+    esac
+  done
+  set -- "${launch_args[@]}"
+  if [[ "$cereal_requested" == true && "$custom_sequence" == false ]]; then
+    sequence="$variant_root/model/cereal_task_sequence.yaml"
+    if ! python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence" --check; then
+      python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence"
+    fi
+    set -- "$@" "sequence_path:=$sequence"
+  fi
+fi
 # Explicit paths exclude the sibling legacy workspace, even when launched from another directory.
 python3 /usr/bin/colcon build --symlink-install --base-paths \
   piper_dual_description piper_collision_guard piper_moveit_guard \

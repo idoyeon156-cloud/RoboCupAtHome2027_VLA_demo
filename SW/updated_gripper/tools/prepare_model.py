@@ -313,16 +313,19 @@ def prepare(config_path, output_root=ROOT):
             while ancestor not in core['left'] | core['right'] and ancestor in parents:
                 ancestor=parents[ancestor]
             side=next((s for s in ('left','right') if ancestor in core[s]),None)
-            if side is None:
-                continue  # World fixtures are handled by MoveIt, not cross-arm distance.
             geom=ET.Element('geometry');attachment_geometry(geom,item['geometry'])
             mesh=geom.find('mesh')
             pts=(mesh_triangles(resolve_mesh(mesh.get('filename'))).reshape(-1,3)
                  * vector(mesh.get('scale','1 1 1').split(),positive=True)) if mesh is not None else primitive_points(geom)
-            protection[side].setdefault('attachment_covers',[]).append(dict(
-                frame=item['name'].removeprefix(side+'_'), bounds_min_m=pts.min(axis=0).tolist(),
-                bounds_max_m=pts.max(axis=0).tolist(), cell_size_m=.02, padding_m=.005))
-        if set(protection)!={'left','right'}:
+            cover=dict(frame=item['name'] if side is None else item['name'].removeprefix(side+'_'),
+                       bounds_min_m=pts.min(axis=0).tolist(), bounds_max_m=pts.max(axis=0).tolist(),
+                       cell_size_m=.02, padding_m=.005)
+            if side is None:
+                # Fixed fixtures stay in their own frames and are compared to BOTH arms.
+                protection.setdefault('environment',dict(mesh_covers=[]))['mesh_covers'].append(cover)
+            else:
+                protection[side].setdefault('attachment_covers',[]).append(cover)
+        if set(protection)-{'environment'}!={'left','right'}:
             raise ValueError('Configure both arms protection')
         for side in ('left','right'):
             p=protection[side]

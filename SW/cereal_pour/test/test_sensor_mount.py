@@ -55,6 +55,7 @@ def test_mount_registration_and_both_envelopes_enclose_source():
 
 def test_distance_guard_detects_mount_proximity_missed_by_old_joint_spheres():
     p = yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+    p.pop('environment', None)  # Isolate the existing mount regression from the fixed post.
     before = copy.deepcopy(p)
     for side in before.values():
         side.pop('attachment_covers')

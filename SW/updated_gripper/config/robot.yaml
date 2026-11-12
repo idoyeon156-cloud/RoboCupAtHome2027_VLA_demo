@@ -123,6 +123,15 @@ joint_distance:
       - 0.04
 # CAD assembly coordinates in mm; see SENSOR_MOUNT.md for registration.
 attachments:
+  # Rear face flush with the base STL rear plane x=-58.5 mm.
+  # Profile extends forward 30 mm and rises from the mounting plane to 500 mm.
+  - name: rear_profile_3030
+    parent: world
+    xyz: [-0.0435, 0.0, 0.25]
+    rpy: [0.0, 0.0, 0.0]
+    geometry:
+      box: [0.03, 0.03, 0.50]
+    touch_links: []
   - name: left_d405_mount
     parent: left_gripper_base
     collision_parent: left_gripper_flange

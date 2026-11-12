@@ -115,6 +115,7 @@ class DistanceModel:
         default_offsets[-1, 2] = 0.1358
         self.covers = {}
         self.attachment_covers = {}
+        self.environment_covers = self.make_covers('', (protection or {})['environment']['mesh_covers']) if (protection or {}).get('environment') else []
         self.offsets = {}
         self.radii = {}
         for side in ("left", "right"):
@@ -135,7 +136,7 @@ class DistanceModel:
             raise ValueError("mesh_covers must be a nonempty list")
         result = []
         for spec in specs:
-            frame = f"{side}_{spec['frame']}"
+            frame = f"{side}_{spec['frame']}" if side else spec['frame']
             lo = np.asarray(spec['bounds_min_m'], dtype=float)
             hi = np.asarray(spec['bounds_max_m'], dtype=float)
             cell, padding = float(spec['cell_size_m']), float(spec['padding_m'])
@@ -149,7 +150,7 @@ class DistanceModel:
             centres = np.stack(np.meshgrid(*axes, indexing='ij'), axis=-1).reshape(-1, 3)
             radii = np.full(len(centres), np.linalg.norm(step) / 2 + padding)
             result.append((self.model.getFrameId(frame), centres, radii,
-                           [f"{frame}_cover_{i}" for i in range(len(centres))]))
+                           [f"{spec.get('label', frame)}_cover_{i}" for i in range(len(centres))]))
         return result
 
     def configuration(self, left, right):
@@ -204,11 +205,29 @@ class DistanceModel:
                 names.extend(labels)
                 radii.extend(radius)
             result[side] = (np.asarray(points), names, np.asarray(radii))
+        if self.environment_covers:
+            result['environment'] = self.cover_points(self.environment_covers)
         return result
+
+    def cover_points(self, covers):
+        points, names, radii = [], [], []
+        for frame, local, radius, labels in covers:
+            pose = self.data.oMf[frame]
+            points.append(local @ pose.rotation.T + pose.translation)
+            names.extend(labels); radii.append(radius)
+        return np.concatenate(points), names, np.concatenate(radii)
 
     def clearance(self, left, right):
         p = self.points(left, right)
-        return closest(p["left"][0], p["right"][0], p["left"][1], p["right"][1], p["left"][2], p["right"][2])
+        best = closest(p["left"][0], p["right"][0], p["left"][1], p["right"][1], p["left"][2], p["right"][2])
+        if self.environment_covers:
+            fixture = p['environment']
+            for side in ('left', 'right'):
+                arm = p[side]
+                gap = closest(arm[0], fixture[0], arm[1], fixture[1], arm[2], fixture[2])
+                if gap.distance < best.distance:
+                    best = gap
+        return best
 
     def path_clearance(self, left, right, left_target, right_target, step_rad=0.02, max_samples=100):
         if not math.isfinite(step_rad) or step_rad <= 0 or max_samples < 1:

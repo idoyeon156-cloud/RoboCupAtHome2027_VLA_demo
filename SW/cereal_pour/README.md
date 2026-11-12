@@ -1,35 +1,20 @@
-# 새 그리퍼 · 시리얼 붓기 RViz 연속 재생
+# 새 그리퍼·D405 마운트·3030 기둥 — YAML 기반 시리얼 작업
 
-2026-11-12 작업 백업의 수정 모델과 시리얼 시퀀스를 별도 작업 공간으로 추가했습니다. 교체 후 그리퍼 모델을 사용하는 독립 작업 공간입니다.
-
-## 실행
-
-Ubuntu 22.04 / ROS 2 Humble 환경에서 이 폴더로 이동한 후 [SETUP.md](SETUP.md)의 처음 설치 절차에 따라 의존성을 설치하세요. 모델과 충돌 메시 생성물은 포함되어 있습니다.
+물체 위치·크기를 [config/cereal_task.yaml](config/cereal_task.yaml)에서 입력합니다. 알파 `[0,90,0,0,-70,0]°` 이후 파지·붓기·복귀 관절 경로를 IK와 충돌 검사로 생성하며 RViz와 실물 배포용이 같은 설정을 사용합니다.
 
 ```bash
 cd SW/cereal_pour
-bash run_meshes_rviz.sh cereal:=true
+bash run_meshes_rviz.sh cereal:=true   # RViz 연속 재생
+bash run_cereal_real.sh               # 실물용, 기본 monitor
 ```
 
-영점 2초 대기 → 왼팔 그릇 유지 자세 → 오른팔 대기 → 정렬 → 25° → 45° → 65° → 1초 유지 → 역순 복귀 → 양팔 영점을 반복합니다. 종료는 Ctrl+C입니다. 실제 시리얼 입자나 유체를 계산하지 않는 관절 동작 시각화이며 기본 시퀀스는 빈 그리퍼 기준입니다.
+YAML 수정 후 다시 실행하면 경로를 재생성합니다. 설치는 [SETUP.md](SETUP.md), 좌표계·설정·서비스·검증 범위는 [CEREAL_TASK.md](CEREAL_TASK.md)를 참고하세요. 실물 드라이버는 별도이며 prepare/start 서비스 요청으로 동작합니다. 그릇 바닥 중심 예시는 world `[0.49,0.115,0.0]m`입니다.
 
-자동 재생은 로컬 ROS 도메인 178에서 실행하며 실물 드라이버 명령을 발행하지 않습니다. 같은 ROS 패키지 이름을 사용하는 기존 작업 공간과 별도 셸에서 실행하세요.
+표시 모델과 MoveIt 모델은 교체 그리퍼·양쪽 마운트·고정 기둥을 포함합니다. 설치 모델 변경은 `config/robot.yaml`과 `model/dual_piper.source.urdf`에서 수행하고 `tools/prepare_model.py`로 생성합니다.
 
-## 주요 파일
+- [D405 장착 좌표·외곽 모델](SENSOR_MOUNT.md)
+- [3030 배치·검사 범위](REAR_PROFILE.md)
+- [기존 고정 관절각 시퀀스 기록](CEREAL_POUR.md)
+- [독립 URDF 패키지](../../HW/URDF/updated_gripper)
 
-- [cereal_preview.py](piper_collision_guard/piper_collision_guard/cereal_preview.py): 연속 RViz 재생
-- [cereal_pour.yaml](piper_collision_guard/config/cereal_pour.yaml): 자세·속도·유지 시간
-- [dual_piper.urdf](piper_dual_description/urdf/dual_piper.urdf): 새 그리퍼 표시 모델
-- [dual_piper_meshes.urdf](piper_moveit_guard/config/dual_piper_meshes.urdf): MoveIt 다면체 충돌 모델
-- [독립 URDF 패키지](../../HW/URDF/updated_gripper): 새 그리퍼 베이스·플랜지 STL 포함
-- [CEREAL_POUR.md](CEREAL_POUR.md): 원본 작업의 상세 시퀀스·물체 설정·실물 경로 참고
-
-이 폴더는 시리얼 작업 백업의 소스를 보존합니다. 미리보기용 단일 합성 STL과 기존 배포 ZIP, 빌드·가상환경 파일은 제외했습니다. 실행에 필요한 URDF, STL, YAML, ROS 패키지, 도구는 포함합니다.
-
-## 이번 업로드의 확인 범위
-
-2026-11-12: 모델 manifest 해시 50개 일치, URDF 메시 참조 240개 해소, Python·Bash 구문 검사, 기본 시퀀스의 관절 한계 및 영점 반복 연결을 확인했습니다. 기본 한 주기는 약 54.56초입니다. 이 환경에는 Pinocchio가 없어 ROS 빌드 및 RViz 재생은 재실행하지 않았습니다. VALIDATION.md는 원본 백업의 과거 검증 기록입니다.
-
-## D405 마운트 반영
-
-교체 그리퍼의 양쪽 손목에 마운트 v6를 반영했습니다. 조인트 거리 검사와 MoveIt 메시 검사가 같은 장착 형상을 사용합니다. [장착 좌표·외곽 구성·검증 범위](SENSOR_MOUNT.md)를 참고하세요. 기존 실행 명령은 같습니다.
+검증: 예시 전체 경로 49개 경유점 생성, 0.5° 이하 보간의 1,800개 상태에서 거리·볼록 메시·물체 충돌 검사 통과. 한 주기 약 73.5초. 마찰·파지력·유체를 계산하는 물리 시뮬레이션은 아닙니다.

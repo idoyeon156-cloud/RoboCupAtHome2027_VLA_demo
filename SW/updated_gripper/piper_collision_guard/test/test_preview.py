@@ -90,6 +90,7 @@ def test_joint_centre_eight_cm_comparison_allows_fifteen_degrees_and_blocks_belo
 def test_nine_cm_demo_and_real_guard_profile_use_same_spheres_and_gap():
     from piper_collision_guard.distance import DistanceModel
     real = yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+    real.pop('environment', None)  # This test isolates the legacy joint-centre comparison mode.
     config = yaml.safe_load((ROOT/'piper_collision_guard/config/guard.yaml').read_text())['piper_collision_guard']['ros__parameters']
     guard = DistanceModel(URDF, link_samples=config['link_samples'], protection=real)
     state = PreviewState(URDF, PROTECTION, joint_center_limit_m=.09)

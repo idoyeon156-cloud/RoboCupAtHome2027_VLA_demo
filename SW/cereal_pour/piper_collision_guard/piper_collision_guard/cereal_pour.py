@@ -1,4 +1,4 @@
-"""Replay the empty-gripper pour via the existing two-stage command gate."""
+"""Replay planned object-dependent paths via the two-stage command gate."""
 import json
 from pathlib import Path
 import time
@@ -30,6 +30,8 @@ SETTLE_S = .20
 
 
 def read_sequence(config):
+    if config.get('version') == 2:
+        raise ValueError('Use the planned v2 replay branch; read_sequence only reads legacy fixed-angle sequences')
     left = np.r_[np.deg2rad(config['bowl_arm_deg']), config['bowl_opening_mm']/1000.]
     poses = {}
     for name in POSES:
@@ -66,8 +68,25 @@ class CerealPour(Node):
             np.r_[self.model.model.upperPositionLimit[self.model.slots[s]],
                   self.model.max_opening[s]] for s in SIDES
         ])
-        poses, self.rates, self.pour_hold = read_sequence(config)
-        self.poses = {name: self.bounded(values) for name, values in poses.items()}
+        self.planned = config.get('version') == 2
+        if self.planned:
+            from .cereal_timeline import Timeline
+            Timeline(config)  # Validate speeds, finite values and return to home.
+            self.rates = np.r_[[np.deg2rad(config['settings']['motion']['joint_speed_deg_s'])]*6,
+                               config['settings']['motion']['opening_speed_mm_s']/1000.]
+            self.planned_steps = []
+            for wp in config['waypoints']:
+                values = np.array([np.r_[np.deg2rad(wp[side+'_deg']), wp['opening_mm'][i]/1000.]
+                                   for i, side in enumerate(SIDES)])
+                self.planned_steps.append((wp['name'], self.bounded(values), float(wp.get('hold_s', 0))))
+            self.alpha_index = next(i for i, step in enumerate(self.planned_steps) if step[0] == 'alpha')
+            expected = np.tile(np.deg2rad(config['settings']['alpha']['joint_deg']), (2, 1))
+            if not np.allclose(self.planned_steps[self.alpha_index][1][:, :6], expected, atol=1e-8):
+                raise ValueError('Planned alpha disagrees with task settings')
+            self.poses = {'ready': self.planned_steps[self.alpha_index][1]}
+        else:
+            poses, self.rates, self.pour_hold = read_sequence(config)
+            self.poses = {name: self.bounded(values) for name, values in poses.items()}
 
         self.feedback = {}
         self.guard_status = {}
@@ -152,7 +171,17 @@ class CerealPour(Node):
             now = time.monotonic()
             measured = self.inputs(now)
             ready = self.poses['ready']
-            if prepare:
+            if self.planned:
+                if prepare:
+                    home = self.planned_steps[0][1]
+                    if np.any(np.abs(measured-home) > GOAL_TOL):
+                        raise ValueError('Prepare requires both arms at planned home, including gripper opening')
+                    self.steps = self.planned_steps[1:self.alpha_index+1]
+                else:
+                    if np.any(np.abs(measured-ready) > GOAL_TOL):
+                        raise ValueError('Start requires the planned alpha pose; call prepare from home first')
+                    self.steps = self.planned_steps[self.alpha_index+1:]
+            elif prepare:
                 if np.any(np.abs(measured[:, :6]) > np.deg2rad(1.5)):
                     raise ValueError('Prepare expects both arms at the neutral joint pose')
                 left_first = np.stack([ready[0], measured[1]])
@@ -224,7 +253,7 @@ class CerealPour(Node):
                     elif now-self.settled_at >= SETTLE_S + hold:
                         self.step_index += 1
                         if self.step_index == len(self.steps):
-                            self.report('complete', 'Both arms holding the ready pose')
+                            self.report('complete', 'Finished; holding '+self.steps[-1][0])
                         else:
                             self.begin_step(now)
                 else:

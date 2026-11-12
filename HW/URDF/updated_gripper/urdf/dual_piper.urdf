@@ -166,7 +166,7 @@
     <parent link="left_link4" />
     <child link="left_link5" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.22" upper="1.22" effort="100" velocity="5" />
+    <limit lower="-1.2217304763960306" upper="1.2217304763960306" effort="100" velocity="5" />
   </joint>
   <link name="left_link6">
     <inertial>
@@ -482,7 +482,7 @@
     <parent link="right_link4" />
     <child link="right_link5" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.22" upper="1.22" effort="100" velocity="5" />
+    <limit lower="-1.2217304763960306" upper="1.2217304763960306" effort="100" velocity="5" />
   </joint>
   <link name="right_link6">
     <inertial>
@@ -632,6 +632,25 @@
     <parent link="world" />
     <child link="right_base_link" />
     <origin xyz="0.0 -0.0875 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+  <link name="rear_profile_3030">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.03 0.03 0.5" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.03 0.03 0.5" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="rear_profile_3030_fixed" type="fixed">
+    <parent link="world" />
+    <child link="rear_profile_3030" />
+    <origin xyz="-0.0435 0.0 0.25" rpy="0.0 0.0 0.0" />
   </joint>
   <link name="left_d405_mount">
     <visual>

@@ -1,6 +1,6 @@
 # RoboCup@Home 2027 — Dual PiPER
 
-양팔 PiPER의 URDF, 두 단계 안전장치, 씨리얼 붓기 RViz 시뮬레이션을 보관합니다.
+양팔 PiPER의 URDF, 두 단계 안전장치, 알파 기반 씨리얼 파지·붓기 시뮬레이션과 실물 배포본을 보관합니다.
 하드웨어 모델은 **HW**, 실행 소프트웨어는 **SW**에서 찾을 수 있습니다.
 
 ```text
@@ -12,10 +12,11 @@ SW/
 ├── original_gripper/       # 교체 전 모델: 조인트 거리 + MoveIt 메시 안전장치
 │   └── legacy/             # 초기 버전 소스와 미리보기 보존
 ├── updated_gripper/        # 교체 후 모델 + 마운트: 조인트 거리 + MoveIt 메시 안전장치
-├── cereal_pour/            # 교체 후 모델 + 마운트: 씨리얼 붓기 RViz 연속 재생
+├── cereal_pour/            # 교체 후 모델 + 마운트: 알파 기반 씨리얼 RViz·실물 배포
 └── bundles/                # 각 안전장치의 시뮬·실물용 소스 ZIP
     ├── original_gripper/
-    └── updated_gripper/
+    ├── updated_gripper/
+    └── cereal_pour/        # 알파 기반 시뮬레이션·실물용 ZIP
 ```
 
 | 폴더 | 내용 | 안내 |
@@ -24,7 +25,7 @@ SW/
 | [HW/URDF/updated_gripper](HW/URDF/updated_gripper/) | 교체 후 그리퍼 + D405 마운트 독립 URDF 패키지 | [모델 빌드](HW/URDF/updated_gripper/README.md) |
 | [SW/original_gripper](SW/original_gripper/) | 교체 전 기준의 두 안전장치 | [설치·설정·실행](SW/original_gripper/README.md) |
 | [SW/updated_gripper](SW/updated_gripper/) | 교체 후 그리퍼 + 마운트 기준의 두 안전장치 | [설치·설정·실행](SW/updated_gripper/README.md) |
-| [SW/cereal_pour](SW/cereal_pour/) | 영점 → 양팔 준비 → 붓기 → 영점의 반복 시뮬레이션 | [실행](SW/cereal_pour/README.md) |
+| [SW/cereal_pour](SW/cereal_pour/) | 영점 → 동시 알파 → 파지 → 붓기 → 내려놓기 → 영점, 실물 실행 포함 | [실행](SW/cereal_pour/README.md) |
 | [SW/bundles](SW/bundles/) | 대상 기기에서 빌드할 수 있는 소스 배포 ZIP | [ZIP 선택](SW/bundles/README.md) |
 
 ## 내려받기와 최초 준비
@@ -81,16 +82,28 @@ bash run_distance_rviz.sh
 bash run_meshes_rviz.sh
 ```
 
-씨리얼 붓기 RViz 연속 재생:
+알파 기반 씨리얼 RViz·실물 배포:
 
 ```bash
 cd SW/cereal_pour
 bash run_meshes_rviz.sh cereal:=true
 ```
 
+양팔 알파는 `[0,90,0,0,-70,0]°`입니다. 물체 바닥은 베이스 장착면 Z=0, 그릇 파지 높이는 3.5cm이며 위치·크기는 `SW/cereal_pour/config/cereal_task.yaml`에서 수정합니다. 저장 후 재실행하면 IK와 경로 충돌 검사를 다시 수행합니다. [시뮬·실물 ZIP](SW/bundles/README.md#알파-기반-시리얼-파지붓기)을 내려받을 수도 있습니다.
+
 씨리얼 재생은 관절 동작 시각화입니다. 실제 시리얼 입자·유체 시뮬레이션은 포함하지 않습니다.
 
 ## 실물용 실행
+
+알파 기반 파지·붓기 실물용:
+
+```bash
+cd SW/cereal_pour
+bash run_cereal_real.sh
+```
+
+기본 monitor이며, 조인트 거리 → MoveIt 메시 가드가 함께 실행됩니다. prepare/start 서비스와 명령 전달 설정은 [CEREAL_TASK.md](SW/cereal_pour/CEREAL_TASK.md)를 참고하세요.
+
 
 두 안전장치 작업 공간에는 기존 실물 경로도 보존합니다.
 

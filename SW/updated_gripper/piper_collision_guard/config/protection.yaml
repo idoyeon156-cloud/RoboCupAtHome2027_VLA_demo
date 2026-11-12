@@ -66,3 +66,16 @@ right:
     - 0.09980513000488281
     cell_size_m: 0.02
     padding_m: 0.005
+environment:
+  mesh_covers:
+  - frame: rear_profile_3030
+    bounds_min_m:
+    - -0.015
+    - -0.015
+    - -0.25
+    bounds_max_m:
+    - 0.015
+    - 0.015
+    - 0.25
+    cell_size_m: 0.02
+    padding_m: 0.005
