@@ -63,7 +63,7 @@ class Scene:
         for name,item in self.objects.items():
             size=item['size'];self.obj_shapes[name]=fcl.Box(*size) if name=='box' else fcl.Cylinder(size[0]/2,size[2])
             self.obj_shapes[name].computeLocalAABB()
-        self.attachments={};self.last_error='';self.calls=0
+        self.backend=None;self.attachments={};self.last_error='';self.calls=0
         self.stop=float(yaml.safe_load((self.root/'config/robot.yaml').read_text())['joint_distance']['stop_clearance_m'])
         self.request=fcl.CollisionRequest();self.result=fcl.CollisionResult()
         self.check_distance=bool(spec['planning'].get('check_joint_distance',True))
@@ -133,7 +133,12 @@ class Scene:
     def edge(self,a,b,held=(),step_deg=None):
         step=np.deg2rad(step_deg or self.spec['planning']['collision_step_deg'])
         n=max(1,int(np.ceil(max(np.max(np.abs(b[:,:6]-a[:,:6]))/step,np.max(np.abs(b[:,6]-a[:,6]))/.002))))
-        return all(self.valid(a+(b-a)*t,held) for t in np.linspace(0,1,n+1))
+        for t in np.linspace(0,1,n+1):
+            state=a+(b-a)*t
+            if not self.valid(state,held):return False
+            if self.backend is None:raise ValueError('MoveIt backend is required for every executable edge')
+            if not self.backend.check_state(state,held):return False
+        return True
 
 
 class Planner:
@@ -150,56 +155,46 @@ class Planner:
 
     def route(self,goal,active):
         start=self.state.copy();scene=self.scene;held=tuple(self.held)
-        if not scene.valid(goal,held):raise ValueError(f'Goal collision: {scene.last_error}')
-        if scene.edge(start,goal,held):return [start,goal]
-        ids=[(SIDES.index(s),j) for s in active for j in range(6)]
-        lo=np.concatenate([scene.model.lowerPositionLimit[scene.fk.slots[s]] for s in active]);hi=np.concatenate([scene.model.upperPositionLimit[scene.fk.slots[s]] for s in active])
-        def pack(q):return np.array([q[i,j] for i,j in ids])
-        def unpack(x):
-            state=start.copy()
-            for (i,j),value in zip(ids,x):state[i,j]=value
-            return state
-        if not np.allclose(start[:,6],goal[:,6]):raise ValueError('RRT routes require fixed opening; open jaws in a separate stage')
-        trees=[([pack(start)],[-1]),([pack(goal)],[-1])];direction=0
-        deadline=time.monotonic()+float(self.spec['planning']['rrt_timeout_s']);step=np.deg2rad(self.spec['planning']['rrt_step_deg'])
-        def extend(tree,target):
-            vertices,parents=tree;nearest=int(np.argmin(np.linalg.norm(np.array(vertices)-target,axis=1)))
-            d=target-vertices[nearest];length=np.linalg.norm(d);new=target if length<=step else vertices[nearest]+d*step/length
-            if not scene.edge(unpack(vertices[nearest]),unpack(new),held,step_deg=self.spec['planning']['collision_step_deg']):return None
-            vertices.append(new.copy());parents.append(nearest);return len(vertices)-1
-        def trace(tree,i):
-            path=[]
-            while i>=0:path.append(tree[0][i]);i=tree[1][i]
-            return list(reversed(path))
-        while time.monotonic()<deadline:
-            a,b=trees[direction],trees[1-direction]
-            sample=b[0][0] if self.rng.random()<.2 else self.rng.uniform(lo,hi)
-            i=extend(a,sample)
-            if i is not None:
-                for _ in range(150):
-                    j=extend(b,a[0][i])
-                    if j is None:break
-                    if np.linalg.norm(b[0][j]-a[0][i])<1e-7:
-                        left,right=trace(a,i),trace(b,j)
-                        path=left+list(reversed(right[:-1])) if direction==0 else right+list(reversed(left[:-1]))
-                        states=[unpack(x) for x in path]
-                        # Shortcut only if the entire replacement edge passes the same checks.
-                        out=[states[0]];k=0
-                        while k<len(states)-1:
-                            next_index=len(states)-1
-                            while next_index>k+1 and not scene.edge(states[k],states[next_index],held):next_index-=1
-                            out.append(states[next_index]);k=next_index
-                        return out
-            direction=1-direction
-        raise ValueError(f'No collision-free RRT path within timeout ({scene.last_error})')
+        if scene.backend is None:raise ValueError('MoveIt planner required; custom RRT fallback is disabled')
+        path=scene.backend.plan(start,goal,active,held)
+        for left,right in zip(path,path[1:]):
+            if not scene.edge(left,right,held):
+                raise ValueError(f'MoveIt route rejected by execution constraints: {scene.last_error}')
+        return path
 
     def move(self,name,goal,active):
+        print(f'{name}: MoveIt planning...',flush=True)
         started=time.monotonic();path=self.route(goal,active)
+        # OMPL emits interpolation samples along straight joint edges. Keep
+        # corners, but avoid stop/settle at every collinear sampling point.
+        compressed=[]
+        for state in path:
+            compressed.append(state)
+            while len(compressed)>=3:
+                a,b,c=compressed[-3:]
+                edge=(c-a).ravel();middle=(b-a).ravel();length=float(edge@edge)
+                if length<=1e-20:break
+                t=float(middle@edge/length)
+                if not 0.<t<1.:break
+                deviation = np.abs(middle-t*edge).reshape(a.shape)
+                exact = np.max(deviation) <= 1e-10
+                near = (self.spec.get('execution', {}).get('arms_only', False)
+                        and np.max(deviation[:, :6]) <= np.deg2rad(.05)
+                        and np.max(deviation[:, 6]) <= 1e-10)
+                if not exact:
+                    # Numerical OMPL bends can create a full stop just before
+                    # alpha. NEVER bypass a non-collinear corner without
+                    # rechecking the replacement edge with MoveIt/objects.
+                    if not near or not self.scene.edge(a,c,self.held):break
+                compressed.pop(-2)
+        path=compressed
         for i,state in enumerate(path[1:]):self.add(name if i==len(path)-2 else f'{name}_via_{i+1}',state)
         self.log.append(dict(stage=name,waypoints=len(path),seconds=round(time.monotonic()-started,3)))
         print(f'{name}: {len(path)-1} segments',flush=True)
 
     def opening(self,name,side,value):
+        if self.spec.get('execution', {}).get('arms_only', False):
+            value = 0.  # Replan with CLOSED jaws; never merely ignore tracking.
         goal=self.state.copy();goal[SIDES.index(side),6]=value
         if not self.scene.edge(self.state,goal,self.held):raise ValueError(f'{name}: {self.scene.last_error}')
         self.add(name,goal)
@@ -216,15 +211,26 @@ class Planner:
             result=least_squares(residual,np.clip(guess,lo+1e-9,hi-1e-9),bounds=(lo,hi),max_nfev=180,gtol=1e-10)
             if np.linalg.norm(result.fun)<1e-5 and not any(np.linalg.norm(result.x-x)<.01 for x in found):
                 found.append(result.x)
-                if len(found)>=4:break
-        return sorted(found,key=lambda x:np.linalg.norm(x-seed))
+                if len(found)>=8:break
+        # Preserve the configured grasp pose, but prefer an IK branch that
+        # rotates J4/J6 less. The old equal-weight nearest solution could
+        # trade a large wrist turn for a small shoulder/elbow improvement.
+        wrist_weight=float(self.spec['planning'].get('wrist_ik_weight',3.))
+        if not np.isfinite(wrist_weight) or wrist_weight<1.:
+            raise ValueError('wrist_ik_weight must be finite and >=1')
+        weights=np.array([1.,1.,1.,wrist_weight,1.,wrist_weight])
+        return sorted(found,key=lambda x:np.linalg.norm(weights*(x-seed)))
 
     def target(self,name,side,position,rotation):
         i=SIDES.index(side);solutions=self.ik(side,vec(position),rotation,self.state[i,:6]);errors=[]
         for q in solutions:
             goal=self.state.copy();goal[i,:6]=q
             if not self.scene.valid(goal,self.held):errors.append(self.scene.last_error);continue
-            try:self.move(name,goal,(side,));return
+            try:
+                wrist_delta=np.rad2deg(q[[3,5]]-self.state[i,[3,5]])
+                self.move(name,goal,(side,))
+                self.log[-1].update(ik_candidates=len(solutions), wrist_delta_j4_j6_deg=wrist_delta.tolist())
+                return
             except ValueError as e:errors.append(str(e))
         raise ValueError(f'{name}: cannot reach {np.round(position,4).tolist()}; '+('; '.join(errors) if errors else 'no in-bounds IK solution'))
 
@@ -278,9 +284,24 @@ class Planner:
                     planning_log=self.log,collision_checks=scene.calls)
 
 
-def generate(root,config_path):
-    spec=yaml.safe_load(Path(config_path).read_text());scene=Scene(root,spec);result=Planner(scene).generate()
+def generate(root,config_path,arms_only=False):
+    from .moveit_backend import MoveItBackend
+    spec=yaml.safe_load(Path(config_path).read_text())
+    spec['execution']={'arms_only': bool(arms_only), 'fixed_opening_mm': [0., 0.] if arms_only else None}
+    scene=Scene(root,spec)
+    with MoveItBackend(scene) as backend:
+        scene.backend=backend
+        result=Planner(scene).generate()
+    result['planner']={'backend':'moveit_ompl','collision':'MoveIt Bullet + Pinocchio distance + task objects',
+                       'ik':'Pinocchio FK + scipy least_squares', 'fallback':False}
     root=Path(root).resolve()
-    inputs=[Path(config_path).resolve(),root/'model/manifest.json',root/'piper_collision_guard/piper_collision_guard/cereal_planning.py']
+    inputs=[Path(config_path).resolve(),root/'model/manifest.json',root/'piper_collision_guard/piper_collision_guard/cereal_planning.py',
+            root/'piper_collision_guard/piper_collision_guard/moveit_backend.py',
+            root/'piper_collision_guard/piper_collision_guard/collision_model.py',
+            root/'piper_collision_guard/piper_collision_guard/distance.py',
+            root/'piper_collision_guard/piper_collision_guard/segment_motion.py',
+            root/'piper_moveit_guard/src/cereal_moveit_planner.cpp',
+            root/'piper_moveit_guard/config/dual_piper.srdf',
+            root/'piper_collision_guard/config/protection.yaml']
     result['input_sha256']={str(p.relative_to(root)) if p.is_relative_to(root) else str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
     return result

@@ -74,7 +74,7 @@ polyhedra:
       - -0.02
 joint_distance:
   stop_clearance_m: 0.01
-  resume_clearance_m: 0.04
+  resume_clearance_m: 0.02
   link_samples: 0
   protection:
     left:

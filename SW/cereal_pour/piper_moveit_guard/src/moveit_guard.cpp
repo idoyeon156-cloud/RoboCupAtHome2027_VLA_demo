@@ -17,6 +17,11 @@
 #include <cmath>
 #include <set>
 #include <sstream>
+#include <fstream>
+#include <filesystem>
+#include <cstdlib>
+#include <iomanip>
+#include <unistd.h>
 
 using JS = sensor_msgs::msg::JointState;
 using Clock = std::chrono::steady_clock;
@@ -26,6 +31,8 @@ using Validity = moveit_msgs::srv::GetStateValidity;
 class Guard : public rclcpp::Node {
   struct Arm { std::array<double, 7> q{}; Time received{}; bool valid=false; };
   std::array<Arm,2> feedback_, target_, hold_;
+  std::array<JS,2> raw_feedback_;
+  std::array<double,16> last_checked_q_{};
   moveit::core::RobotModelPtr model_;
   std::unique_ptr<planning_scene::PlanningScene> scene_;
   std::vector<rclcpp::Subscription<JS>::SharedPtr> subs_;
@@ -48,13 +55,63 @@ class Guard : public rclcpp::Node {
   Time started_=Clock::now();
   double timeout_, skew_, step_, grip_step_, budget_;
   int max_samples_;
-  std::string reason_="waiting_for_inputs", pair_;
+  std::string reason_="waiting_for_inputs", pair_, first_stop_reason_;
+  std::string model_fingerprint_, persisted_first_stop_;
+  bool persisted_latched_=false, visualize_geometry_=false;
+  std::ofstream diagnostic_;
+  Time last_diagnostic_{};
+  Time last_visualization_{};
+  bool diagnostic_failed_=false;
+  std::string checked_pose_role_="none";
   std::array<double,2> max_opening_{};
   Eigen::Vector3d contact_position_=Eigen::Vector3d::Zero();
   double penetration_=0.;
   static std::string side(int i) {return i==0 ? "left" : "right";}
   static double elapsed(Time t) { return std::chrono::duration<double>(Clock::now()-t).count(); }
-  void trip(const std::string& why) {latched_=true; reason_=why;}
+  static std::string quote(const std::string& text) {
+    std::ostringstream out;out<<'"';
+    for(unsigned char c:text) {
+      if(c=='"' || c=='\\') out<<'\\'<<c;
+      else if(c=='\n') out<<"\\n";
+      else if(c=='\r') out<<"\\r";
+      else if(c=='\t') out<<"\\t";
+      else if(c<32) out<<"?";
+      else out<<c;
+    }
+    out<<'"';return out.str();
+  }
+  template<typename Values> static void numbers(std::ostream& out,const Values& values) {
+    out<<"[";bool first=true;
+    for(double value:values) {if(!first) out<<",";first=false;if(std::isfinite(value)) out<<value;else out<<"null";}
+    out<<"]";
+  }
+  void record(const std::string& kind,const std::string& status) {
+    if(!diagnostic_.is_open() || diagnostic_failed_) return;
+    std::ostringstream out;out<<std::setprecision(12);
+    out<<"{\"node\":\"moveit_guard\",\"pid\":"<<getpid()<<",\"ros_time_ns\":"<<now().nanoseconds()
+       <<",\"monotonic_ns\":"<<std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count()
+       <<",\"event\":"<<quote(kind)<<",\"model_fingerprint\":"<<quote(model_fingerprint_)
+       <<",\"data\":"<<status<<",\"checked_pose_role\":"<<quote(checked_pose_role_)
+       <<",\"checked_joint_rad_m\":";numbers(out,last_checked_q_);
+    out<<",\"arms\":{";
+    for(int s=0;s<2;++s) {
+      if(s) out<<",";
+      out<<quote(side(s))<<":{\"feedback_valid\":"<<(feedback_[s].valid?"true":"false")
+         <<",\"target_valid\":"<<(target_[s].valid?"true":"false")
+         <<",\"feedback_age_s\":"<<elapsed(feedback_[s].received)
+         <<",\"target_age_s\":"<<elapsed(target_[s].received)
+         <<",\"raw_feedback_names\":[";
+      for(size_t i=0;i<raw_feedback_[s].name.size();++i) {if(i) out<<",";out<<quote(raw_feedback_[s].name[i]);}
+      out<<"],\"raw_feedback_position\":";numbers(out,raw_feedback_[s].position);
+      out<<",\"source_stamp_sec\":"<<raw_feedback_[s].header.stamp.sec
+         <<",\"source_stamp_nanosec\":"<<raw_feedback_[s].header.stamp.nanosec
+         <<",\"normalized_feedback_rad_m\":";numbers(out,feedback_[s].q);
+      out<<",\"target_rad_m\":";numbers(out,target_[s].q);out<<"}";
+    }
+    out<<"}}\n";diagnostic_<<out.str();diagnostic_.flush();
+    if(!diagnostic_) {diagnostic_failed_=true;RCLCPP_ERROR(get_logger(),"DIAGNOSTIC_WRITE_FAILED");}
+  }
+  void trip(const std::string& why) {if(!latched_) first_stop_reason_=why; latched_=true; reason_=why;}
 
   bool fresh(const std::array<Arm,2>& arms) const {
     return arms[0].valid && arms[1].valid && elapsed(arms[0].received)<=timeout_ &&
@@ -83,7 +140,9 @@ class Guard : public rclcpp::Node {
           acm.setEntry(a->getName(),b->getName(),false);
   }
   void drawBoxes(moveit::core::RobotState& state) {
-    if(!demo_ || !boxes_) return;
+    if(!boxes_) return;
+    if(elapsed(last_visualization_)<.1) return;
+    last_visualization_=Clock::now();
     visualization_msgs::msg::MarkerArray array;
     visualization_msgs::msg::Marker clear;clear.header.frame_id="world";clear.action=visualization_msgs::msg::Marker::DELETEALL;
     array.markers.push_back(clear);int id=0;
@@ -175,6 +234,7 @@ class Guard : public rclcpp::Node {
     config_ack_->publish(ack);
   }
   bool collision(const std::array<double,16>& q, std::vector<moveit_msgs::msg::ContactInformation>* contacts=nullptr) {
+    last_checked_q_=q;
     moveit::core::RobotState state(model_); state.setToDefaultValues();
     const auto ns=names();
     for(size_t i=0;i<q.size();++i) {
@@ -199,7 +259,10 @@ class Guard : public rclcpp::Node {
       c.normal.x=contact.normal.x();c.normal.y=contact.normal.y();c.normal.z=contact.normal.z();
       c.depth=std::max(0.,convex_meshes_?-contact.depth:contact.depth);contacts->push_back(c);
     }
-    drawBoxes(state);
+    // Predictive samples are inspected, but must not masquerade as the
+    // observed robot pose in RViz. Draw only current feedback/demo state.
+    if(demo_ || checked_pose_role_=="current_feedback" || checked_pose_role_=="reset_feedback")
+      drawBoxes(state);
     return result.collision;
   }
   bool pathSafe(Time started) {
@@ -219,11 +282,13 @@ class Guard : public rclcpp::Node {
         double t=static_cast<double>(s==0?l:r)/n[s];
         q[s*8+j]=a[s*8+j]+t*(b[s*8+j]-a[s*8+j]);
       }
+      checked_pose_role_="predicted_path_sample";
       if(collision(q)) {trip(convex_meshes_?"predicted_mesh_collision":"predicted_box_collision");return false;}
     }
     return true;
   }
   void receive(const JS& msg,int s,bool target) {
+    if(!target) raw_feedback_[s]=msg;
     auto& arm=target?target_[s]:feedback_[s]; arm.valid=false;
     try {
       double age=(now()-rclcpp::Time(msg.header.stamp)).seconds();
@@ -242,12 +307,27 @@ class Guard : public rclcpp::Node {
         if(!std::isfinite(arm.q[j])) throw std::runtime_error("nonfinite_state");
         if(j<6) {
           const auto& bounds=model_->getVariableBounds(side(s)+"_joint"+std::to_string(j+1));
-          if(arm.q[j]<bounds.min_position_ || arm.q[j]>bounds.max_position_) throw std::runtime_error("joint_bounds");
-        } else if(arm.q[j]<0 || arm.q[j]>max_opening_[s]) throw std::runtime_error("gripper_bounds");
+          // Only measured encoder noise may be normalized at a boundary.
+          // Targets, state-validity requests and the URDF remain strict.
+          const double tolerance=target?0.:(j==4?0.15:0.05)*3.14159265358979323846/180.;
+          if(arm.q[j]<bounds.min_position_-tolerance || arm.q[j]>bounds.max_position_+tolerance) {
+            std::ostringstream detail;
+            detail<<"joint_bounds_"<<side(s)<<"_J"<<j+1<<"_rad="<<arm.q[j]
+                  <<"_limits="<<bounds.min_position_<<","<<bounds.max_position_;
+            throw std::runtime_error(detail.str());
+          }
+          if(!target) arm.q[j]=std::clamp(arm.q[j],bounds.min_position_,bounds.max_position_);
+        } else {
+          if(!target && arm.q[j]>=-0.00025 && arm.q[j]<0) arm.q[j]=0.;
+          if(arm.q[j]<0 || arm.q[j]>max_opening_[s])
+            throw std::runtime_error("gripper_bounds_"+side(s)+"_m="+std::to_string(arm.q[j]));
+        }
       }
       arm.received=Clock::now()-std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(std::max(0.,age)));
       arm.valid=true;
-    } catch(const std::exception&) {trip(target?"invalid_target":"invalid_feedback");}
+    } catch(const std::exception& error) {
+      trip(std::string(target?"invalid_target: ":"invalid_feedback: ")+error.what());
+    }
   }
   void publish(const std::array<Arm,2>& arms) {
     for(int s=0;s<2;++s) {
@@ -264,8 +344,33 @@ class Guard : public rclcpp::Node {
     std_msgs::msg::String msg;std::ostringstream os;
     os<<"{\"mode\":\""<<(demo_?"demo":enforce_?"enforce":"monitor")<<"\",\"blocked\":"<<(blocked?"true":"false")
       <<",\"geometry\":\""<<(convex_meshes_?"convex_meshes":"boxes")<<"\",\"latched\":"<<(latched_?"true":"false")<<",\"pose_collision\":"<<(pose_collision?"true":"false")
-      <<",\"penetration_depth_m\":"<<penetration_<<",\"reason\":\""<<reason_<<"\",\"pair\":\""<<pair_<<"\"}";
+      <<",\"penetration_depth_m\":"<<penetration_<<",\"reason\":"<<quote(reason_)<<",\"first_stop_reason\":"<<quote(first_stop_reason_)<<",\"pair\":"<<quote(pair_)<<"}";
     msg.data=os.str();status_->publish(msg);
+    if(latched_!=persisted_latched_ || first_stop_reason_!=persisted_first_stop_) {
+      std::ostringstream event;
+      event<<"guard_event: "<<msg.data<<" model_fingerprint="<<model_fingerprint_;
+      for(int s=0;s<2;++s) {
+        event<<" "<<side(s)<<"_feedback_valid="<<feedback_[s].valid
+             <<" "<<side(s)<<"_source_stamp="<<raw_feedback_[s].header.stamp.sec
+             <<"."<<raw_feedback_[s].header.stamp.nanosec<<" "<<side(s)<<"_raw_feedback=[";
+        for(size_t i=0;i<raw_feedback_[s].position.size();++i) {
+          if(i) event<<",";
+          if(i<raw_feedback_[s].name.size()) event<<raw_feedback_[s].name[i]<<"=";
+          event<<raw_feedback_[s].position[i];
+        }
+        event<<"] "<<side(s)<<"_target_rad_m=[";
+        for(size_t i=0;i<7;++i) {if(i) event<<",";event<<target_[s].q[i];}
+        event<<"]";
+      }
+      event<<" checked_joint_rad_m=[";
+      for(size_t i=0;i<last_checked_q_.size();++i) {if(i) event<<",";event<<last_checked_q_[i];}
+      event<<"]";
+      if(latched_) RCLCPP_ERROR(get_logger(),"%s",event.str().c_str());
+      else RCLCPP_INFO(get_logger(),"%s",event.str().c_str());
+      persisted_latched_=latched_;persisted_first_stop_=first_stop_reason_;
+      record(latched_?"stop_transition":"unlock_transition",msg.data);
+    }
+    if(elapsed(last_diagnostic_)>=.05) {record("sample",msg.data);last_diagnostic_=Clock::now();}
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id="world";marker.header.stamp=now();marker.ns="moveit_status";marker.id=0;
     marker.type=visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
@@ -290,6 +395,7 @@ class Guard : public rclcpp::Node {
         else reason_="waiting_for_feedback";
       }
       else {
+        checked_pose_role_="current_feedback";
         current_collision=collision(positions(feedback_));
         if(current_collision) trip(convex_meshes_?"current_mesh_collision":"current_box_collision");
         if(!latched_ && fresh(target_) && upstreamClear()) safe=pathSafe(started);
@@ -299,7 +405,7 @@ class Guard : public rclcpp::Node {
       if(safe && (!fresh(feedback_) || !fresh(target_) || !upstreamClear() || elapsed(started)>budget_)) {
         safe=false;trip("inputs_expired_during_check");
       }
-      if(enforce_ && (count_publishers("/joint_ctrl_cmd_left")>1 || count_publishers("/joint_ctrl_cmd_right")>1)) {
+      if(enforce_ && (count_publishers(output_[0]->get_topic_name())>1 || count_publishers(output_[1]->get_topic_name())>1)) {
         safe=false;trip("another_driver_command_publisher");
       }
       if(safe && !latched_) {
@@ -317,6 +423,8 @@ class Guard : public rclcpp::Node {
 public:
   Guard():Node("piper_moveit_guard") {
     convex_meshes_=declare_parameter("convex_meshes",false);
+    visualize_geometry_=declare_parameter("visualize_collision_geometry",false);
+    model_fingerprint_=declare_parameter<std::string>("model_fingerprint","not_recorded");
     enforce_=declare_parameter("enforce",false);demo_=declare_parameter("demo",false);
     confirmed_=declare_parameter("geometry_confirmed",false);
     timeout_=declare_parameter("input_timeout_s",0.15);skew_=declare_parameter("max_arm_skew_s",0.05);
@@ -324,6 +432,15 @@ public:
     budget_=declare_parameter("calculation_budget_s",0.05);max_samples_=declare_parameter("max_path_samples",2500);
     const auto speed=declare_parameter("driver_speed_ratio",10);
     const auto effort=declare_parameter("gripper_effort_nm",1.0);
+    try {
+      const char* root_env=std::getenv("ROS_LOG_DIR");const char* run_env=std::getenv("CEREAL_RUN_ID");
+      std::filesystem::path directory=root_env?root_env:"/tmp/cereal_ros_logs";
+      directory/= "diagnostics";directory/=run_env?run_env:"unassigned";
+      std::filesystem::create_directories(directory);
+      diagnostic_.open(directory/"moveit_guard.jsonl",std::ios::app);
+      if(!diagnostic_) throw std::runtime_error("cannot open diagnostics");
+      RCLCPP_INFO(get_logger(),"Detailed diagnostics: %s",(directory/"moveit_guard.jsonl").c_str());
+    } catch(const std::exception& error) {diagnostic_failed_=true;RCLCPP_ERROR(get_logger(),"DIAGNOSTIC_WRITE_FAILED: %s",error.what());}
     if((enforce_ && (!confirmed_ || demo_)) || !std::isfinite(timeout_) || timeout_<=0 ||
        !std::isfinite(skew_) || skew_<0 || !std::isfinite(step_) || step_<=0 ||
        !std::isfinite(grip_step_) || grip_step_<=0 || !std::isfinite(budget_) || budget_<=0 ||
@@ -356,6 +473,13 @@ public:
     }
     // Cross-arm pairs remain checked even when geometry is tuned.
     forceCrossArmChecks(*scene_,model_);
+    size_t shapes=0;
+    for(const auto* link:model_->getLinkModelsWithCollisionGeometry()) shapes+=link->getShapes().size();
+    RCLCPP_INFO(get_logger(),"guard_model: fingerprint=%s collision_links=%zu collision_parts=%zu",
+                model_fingerprint_.c_str(),model_->getLinkModelsWithCollisionGeometry().size(),shapes);
+    record("startup","{\"collision_links\":"+std::to_string(model_->getLinkModelsWithCollisionGeometry().size())+
+           ",\"collision_parts\":"+std::to_string(shapes)+",\"driver_speed_ratio\":"+
+           std::to_string(get_parameter("driver_speed_ratio").as_int())+"}");
     const auto latched=rclcpp::QoS(1).reliable().transient_local();
     status_=create_publisher<std_msgs::msg::String>("/moveit_guard/status",latched);
     stop_=create_publisher<std_msgs::msg::Bool>("/moveit_guard/stop_requested",latched);
@@ -373,11 +497,13 @@ public:
             auto it=std::find(msg.name.begin(),msg.name.end(),ns[i]);if(it==msg.name.end()) return;
             q[i]=msg.position[std::distance(msg.name.begin(),it)];
           }
+          checked_pose_role_="state_validity_service";
           res->valid=!collision(q,&res->contacts);
         } catch(const std::exception&) {res->valid=false;}
       });
-    if(demo_) {
+    if(demo_ || visualize_geometry_)
       boxes_=create_publisher<visualization_msgs::msg::MarkerArray>("/moveit_guard/boxes",1);
+    if(demo_) {
       config_ack_=create_publisher<std_msgs::msg::String>("/moveit_guard/applied_description",latched);
       if(!convex_meshes_) tuning_=create_subscription<std_msgs::msg::String>("/moveit_guard/tuned_description",latched,
         [this](std_msgs::msg::String::SharedPtr message){tune(*message);});
@@ -395,13 +521,14 @@ public:
         }
         try {
           if(!valid) throw std::runtime_error("invalid_demo_state");
+          checked_pose_role_="rviz_demo";
           bool hit=collision(q);reason_=hit?(convex_meshes_?"mesh_collision":"box_collision"):"clear";report(hit,hit);
         } catch(const std::exception&) {reason_="invalid_demo_state";report(true);}
       }));
       RCLCPP_INFO(get_logger(),"DEMO: inspect poses only; no driver publishers");return;
     }
     for(int s=0;s<2;++s) {
-      subs_.push_back(create_subscription<JS>("/joint_states_"+side(s),1,[this,s](JS::SharedPtr m){receive(*m,s,false);}));
+      subs_.push_back(create_subscription<JS>("/joint_states_"+side(s),rclcpp::SensorDataQoS().keep_last(1),[this,s](JS::SharedPtr m){receive(*m,s,false);}));
       subs_.push_back(create_subscription<JS>(enforce_?"/pinocchio_checked/"+side(s)+"_target":"/teleop/"+side(s)+"_target",1,
         [this,s](JS::SharedPtr m){receive(*m,s,true);}));
       if(enforce_) output_[s]=create_publisher<JS>("/joint_ctrl_cmd_"+side(s),1);
@@ -410,10 +537,13 @@ public:
       [this](std_msgs::msg::Bool::SharedPtr msg){upstream_stop_=msg->data;upstream_time_=Clock::now();});
     reset_=create_service<std_srvs::srv::Trigger>("/moveit_guard/reset",[this](const std_srvs::srv::Trigger::Request::SharedPtr, std_srvs::srv::Trigger::Response::SharedPtr response){
       try {
+        checked_pose_role_="reset_feedback";
         response->success=fresh(feedback_) && !collision(positions(feedback_));
-        if(response->success) {latched_=false;holding_=false;target_={};reason_="reset_waiting_for_new_targets";}
+        if(response->success) {latched_=false;first_stop_reason_.clear();holding_=false;target_={};reason_="reset_waiting_for_new_targets";}
       } catch(const std::exception&) {response->success=false;}
       response->message=response->success?"Reset; fresh stage-1 commands required":"Reset refused: stale feedback or box collision";
+      RCLCPP_INFO(get_logger(),"guard_reset: success=%s reason=%s",response->success?"true":"false",reason_.c_str());
+      record("reset",std::string("{\"success\":")+(response->success?"true":"false")+",\"reason\":"+quote(reason_)+"}");
     });
     timer_=create_wall_timer(std::chrono::milliseconds(20),[this]{tick();});
     RCLCPP_INFO(get_logger(),"%s: cross-arm MoveIt %s checks",enforce_?"ENFORCE":"MONITOR",convex_meshes_?"Bullet convex mesh":"FCL box");

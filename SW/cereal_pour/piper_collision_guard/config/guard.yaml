@@ -4,7 +4,7 @@ piper_collision_guard:
     geometry_confirmed: false
     rate_hz: 50.0
     stop_clearance_m: 0.01
-    resume_clearance_m: 0.04
+    resume_clearance_m: 0.02
     link_samples: 0
     feedback_timeout_s: 0.15
     target_timeout_s: 0.15

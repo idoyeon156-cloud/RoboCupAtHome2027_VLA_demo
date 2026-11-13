@@ -5,6 +5,34 @@ from ament_index_python.packages import get_package_share_directory
 from .box_tuning import tuned_description
 
 
+def load_semantic(share, description):
+    """Inspect arm exteriors against the OTHER arm and environment.
+
+    Preserve the deployment's assembly-internal exclusions. Do not report
+    contact between separately meshed parts of the same arm as an external
+    collision. No cross-arm or robot/environment exclusion is retained.
+    """
+    semantic = ET.fromstring((Path(share)/'config/dual_piper.srdf').read_text())
+    robot = ET.fromstring(description)
+    for entry in list(semantic.findall('disable_collisions')):
+        a, b = entry.get('link1', ''), entry.get('link2', '')
+        if not any(a.startswith(side+'_') and b.startswith(side+'_') for side in ('left', 'right')):
+            semantic.remove(entry)
+    existing = {frozenset((e.get('link1'), e.get('link2')))
+                for e in semantic.findall('disable_collisions')}
+    for side in ('left', 'right'):
+        links = sorted(e.get('name') for e in robot.findall('link')
+                       if e.get('name').startswith(side+'_') and e.find('collision') is not None)
+        for i, a in enumerate(links):
+            for b in links[i+1:]:
+                key = frozenset((a, b))
+                if key not in existing:
+                    ET.SubElement(semantic, 'disable_collisions', link1=a, link2=b,
+                                  reason='SameArmAssemblyInternal')
+                    existing.add(key)
+    return ET.tostring(semantic, encoding='unicode')
+
+
 def load_model(share, geometry='meshes', profile_path=''):
     share = Path(share)
     if geometry not in ('meshes', 'boxes'):

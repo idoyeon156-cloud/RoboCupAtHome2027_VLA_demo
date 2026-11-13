@@ -86,12 +86,18 @@ bash run_meshes_rviz.sh
 
 ```bash
 cd SW/cereal_pour
-bash run_meshes_rviz.sh cereal:=true
+bash run_cereal_rviz.sh arms_only:=true
 ```
 
 양팔 알파는 `[0,90,0,0,-70,0]°`입니다. 물체 바닥은 베이스 장착면 Z=0, 그릇 파지 높이는 3.5cm이며 위치·크기는 `SW/cereal_pour/config/cereal_task.yaml`에서 수정합니다. 저장 후 재실행하면 IK와 경로 충돌 검사를 다시 수행합니다. [시뮬·실물 ZIP](SW/bundles/README.md#알파-기반-시리얼-파지붓기)을 내려받을 수도 있습니다.
 
 씨리얼 재생은 관절 동작 시각화입니다. 실제 시리얼 입자·유체 시뮬레이션은 포함하지 않습니다.
+
+2026-11-13 현재 배포는 **그리퍼 제외 팔 전용 모드에서 실물 전체 시퀀스·제로 복귀 성공**을 확인한 소스입니다.
+속도와 끊김·지터링을 일부 개선했으며 잔여 떨림과 그리퍼 미개방은 조사 중입니다.
+**안전상 같은 작업 폴더에서 시뮬레이션을 끝까지 완료해야 실물 실행이 가능합니다. 안정화 후에는
+시뮬레이션 없이 실행할 수 있도록 변경할 예정이며, 현재는 이 선행 조건을 유지합니다.**
+변경 없는 소스·설정은 완료 기록을 재사용합니다. 새 설치나 소스·모델·설정 변경 시 다시 완료해야 합니다.
 
 ## 실물용 실행
 
@@ -99,10 +105,12 @@ bash run_meshes_rviz.sh cereal:=true
 
 ```bash
 cd SW/cereal_pour
-bash run_cereal_real.sh
+bash run_cereal_real.sh enforce:=true geometry_confirmed:=true arms_only:=true
 ```
 
-기본 monitor이며, 조인트 거리 → MoveIt 메시 가드가 함께 실행됩니다. prepare/start 서비스와 명령 전달 설정은 [CEREAL_TASK.md](SW/cereal_pour/CEREAL_TASK.md)를 참고하세요.
+위 명령은 조인트 거리 → MoveIt 메시 가드를 enforce로 실행합니다. 팔 전용 드라이버와
+`check`/`run` 명령, CAN 좌우 및 시뮬 선행 정책은 [현재 실물 배포 안내](SW/cereal_pour/README.md)를 참고하세요.
+실제 물체 없이 관절 영점·그리퍼 닫힘 상태에서 시작하며, 그리퍼 개폐 명령은 보내지 않습니다.
 
 
 두 안전장치 작업 공간에는 기존 실물 경로도 보존합니다.

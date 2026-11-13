@@ -18,6 +18,7 @@ class CerealPreview(Node):
         super().__init__('cereal_preview')
         share = Path(get_package_share_directory('piper_collision_guard'))
         self.declare_parameter('sequence_path', str(share/'config/cereal_pour.yaml'))
+        self.declare_parameter('feedback_driven', False)
         config = yaml.safe_load(Path(self.get_parameter('sequence_path').value).read_text())
         self.timeline = None
         self.scene = None
@@ -40,6 +41,16 @@ class CerealPreview(Node):
             self.names = [f'{side}_joint{i}' for side in SIDES for i in range(1, 9)]
             self.duration = self.timeline.duration
             self.started = time.monotonic()
+            if self.get_parameter('feedback_driven').value:
+                from rclpy.qos import QoSProfile, DurabilityPolicy
+                self.actual_q = np.zeros((2, 7));self.actual_phase = 'home';self.actual_held = ()
+                self.by_phase = {wp['name']: wp for wp in config['waypoints']}
+                self.create_subscription(JointState, '/cereal_sim/joint_states', self.receive_actual, 1)
+                self.create_subscription(String, '/cereal_sim/cereal_pour/status', self.receive_phase,
+                                         QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+                self.create_timer(TICK_S, lambda: self.publish_objects(self.actual_q, self.actual_phase, self.actual_held))
+                self.get_logger().info('Object display follows guarded simulated feedback; no timeline joint publisher')
+                return
             self.publisher = self.create_publisher(JointState, 'joint_states', 1)
             self.create_timer(TICK_S, self.tick)
             self.get_logger().info(f'Planned alpha/pick/pour loop: {self.duration:.1f}s, {len(config["waypoints"])} waypoints')
@@ -62,6 +73,29 @@ class CerealPreview(Node):
         self.started = time.monotonic()
         self.publisher = self.create_publisher(JointState, 'joint_states', 1)
         self.create_timer(TICK_S, self.tick)
+
+    def receive_actual(self, msg):
+        values = dict(zip(msg.name, msg.position))
+        try:
+            q = np.array([[*[values[f'{s}_joint{i}'] for i in range(1, 7)],
+                           2*values[f'{s}_joint7']] for s in SIDES])
+            if np.isfinite(q).all():self.actual_q = q
+        except KeyError:
+            return
+
+    def receive_phase(self, msg):
+        try:
+            status = json.loads(msg.data)
+            self.actual_phase = status.get('detail', 'unknown')
+            if status.get('state') == 'running' and self.actual_phase in self.by_phase:
+                wp = self.by_phase[self.actual_phase]
+                # Attachment changes at reached waypoints, not by elapsed video time.
+                index = next(i for i, p in enumerate(self.task['waypoints']) if p['name'] == wp['name'])
+                self.actual_held = self.task['waypoints'][max(0, index-1)]['held_objects']
+            elif status.get('state') == 'complete':
+                self.actual_held = self.task['waypoints'][-1]['held_objects']
+        except (ValueError, KeyError, TypeError):
+            return
 
     def tick(self):
         if self.timeline is not None:

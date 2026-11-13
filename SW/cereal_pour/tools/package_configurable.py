@@ -23,13 +23,18 @@ def package(out, cereal=False):
     files=[]
     for directory in ('model','config','piper_dual_description','piper_collision_guard','piper_moveit_guard','test'):
         files += [p for p in (ROOT/directory).rglob('*') if p.is_file()
-                  and not any(x in p.parts for x in ('__pycache__','.pytest_cache'))
+                  and not any(x in p.parts for x in ('__pycache__','.pytest_cache','simulation_sessions'))
                   and not any(x.endswith('.egg-info') for x in p.parts)
+                  and p.name != 'last_completed_simulation.json'
                   and p.suffix not in ('.pyc','.pyo')]
     files += [p for p in ROOT.glob('run*.sh')]
     files += [ROOT/x for x in ('README.md','SENSOR_MOUNT.md','REAR_PROFILE.md','VALIDATION.md','requirements.txt',
-               'tools/prepare_model.py','tools/generate_collision_boxes.py',
-               'tools/generate_collision_meshes.py','tools/package_configurable.py','tools/plan_cereal_task.py','CEREAL_TASK.md')]
+               'tools/prepare_model.py','tools/prepare_driver_overlay.py','tools/generate_collision_boxes.py',
+               'tools/generate_collision_meshes.py','tools/package_configurable.py','tools/real_control.py','tools/plan_cereal_task.py','CEREAL_TASK.md','EASY_START_KO.md','REAL_START_KO.md',
+               'SIM_START_KO.md','ARMS_ONLY_KO.md','REAL_RUN_OBSERVATIONS_2026-11-13_KO.md','COLLISION_ANALYSIS_AND_COMMANDS_KO.md','INCIDENT_2026-11-13_KO.md',
+               'POSE_MISMATCH_2026-11-13_KO.md','CAN_BINDING_KO.md','CHAT_HANDOFF_2026-11-13_KO.md','tools/read_session_logs.py')]
+    if (ROOT/'REAL_MOTION_HOLD_KO.md').is_file():
+        files.append(ROOT/'REAL_MOTION_HOLD_KO.md')
     if cereal:
         files += [ROOT/'SETUP.md', ROOT/'CEREAL_POUR.md', ROOT/'CEREAL_TASK.md', ROOT/'tools/plan_cereal_pour.py', ROOT/'tools/plan_cereal_task.py']
     for name,entry,label in (CEREAL_BUNDLES if cereal else BUNDLES):
@@ -74,7 +79,64 @@ bash {entry}
 한 작업 공간 안에서는 시뮬과 실물용이 같은 생성 모델을 공유합니다. 시뮬은 하나씩 실행하세요.
 '''
         if cereal:
-            start += '\n시리얼 붓기 시작·정지 및 물체 설정은 CEREAL_TASK.md를 참고하세요.\n'
+            hold_notice = ('별도 REAL_MOTION_HOLD_KO.md가 포함돼 있어 임시 실물 차단도 적용됩니다.\n'
+                           if (ROOT/'REAL_MOTION_HOLD_KO.md').exists() else '')
+            start = f'''# {label} — 팔 전용 구동 확인 배포
+
+2026-11-13: 그리퍼 제외 상태의 전체 시퀀스와 제로 복귀를 확인한 현재 소스입니다.
+속도·끊김·지터링을 일부 개선했으나 잔여 떨림과 그리퍼 활성화 문제는 조사 중입니다.
+실제 물체 파지·붓기나 충돌·제동 성능 검증 완료를 뜻하지 않습니다.
+{hold_notice}
+**안전상 먼저 같은 작업 폴더에서 시뮬을 끝까지 완료해야 실물을 실행할 수 있습니다.
+안정화 후 시뮬 없이 실행할 수 있도록 변경할 예정이며, 현재는 선행 조건을 유지합니다.**
+소스·모델·설정·속도가 같으면 완료 기록을 재사용합니다. 새 폴더/기기 또는 변경 후에는 다시 완료합니다.
+
+## 최초 준비
+
+Ubuntu 22.04 / ROS 2 Humble 의존성은 SETUP.md를 참고하세요.
+
+```bash
+source /opt/ros/humble/setup.bash
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+## 먼저 시뮬 완료
+
+이 README_START.md가 있는 폴더에서, 실물용 ZIP도 동일하게 실행합니다.
+
+```bash
+bash run_cereal_rviz.sh arms_only:=true
+```
+
+`SIMULATION COMPLETE` 후 종료합니다. 중간 종료는 완료가 아닙니다.
+시뮬 완료 기록은 배포하지 않으며 다른 폴더의 기록을 복사해서 사용하지 않습니다.
+
+## 실물 — 각기 별도 터미널
+
+물체 없이 양팔 관절 영점·그리퍼 닫힘 상태에서 시작합니다. 외부 PiPER ROS 드라이버 설치가 필요합니다.
+
+```bash
+# 터미널 1: 관절 활성화, 그리퍼 CAN 명령 생략
+bash run_piper_driver.sh can0 can1 --arms-only
+```
+
+```bash
+# 터미널 2: 두 enforce 가드와 완료 경로
+bash run_cereal_real.sh enforce:=true geometry_confirmed:=true arms_only:=true
+```
+
+```bash
+# 터미널 3: PASS 후 전체 실행
+bash run_real_control.sh check
+bash run_real_control.sh run
+```
+
+제로 → 알파 → 가상 파지·붓기 경로 → 알파 → 제로를 연속 실행합니다.
+`Finished; holding return_home`가 완료입니다. CAN은 로봇 뒤에서 본 왼팔 can0 / 오른팔 can1입니다.
+현재 실행 기준은 README.md와 ARMS_ONLY_KO.md입니다. 과거 사고 문서는 조사 당시의 기록입니다.
+'''
         with zipfile.ZipFile(out/(name+'.zip'),'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
             for p in sorted(set(files)):
                 z.write(p,prefix+p.relative_to(ROOT).as_posix())

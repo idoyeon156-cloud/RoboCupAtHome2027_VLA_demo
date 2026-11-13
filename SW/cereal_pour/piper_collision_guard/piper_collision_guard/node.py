@@ -1,5 +1,6 @@
 """ROS2 point-distance monitor and optional joint-position command gate."""
 import json
+import hashlib
 import math
 from pathlib import Path
 import time
@@ -16,7 +17,8 @@ from std_srvs.srv import Trigger
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 
-from .distance import DistanceModel, Interlock, arm_state
+from .distance import DistanceModel, Interlock, arm_state, normalize_feedback_joints
+from .diagnostics import Recorder
 
 
 class CollisionGuard(Node):
@@ -26,7 +28,7 @@ class CollisionGuard(Node):
         default_protection = str(Path(get_package_share_directory("piper_collision_guard")) / "config/protection.yaml")
         defaults = dict(urdf_path=default_urdf, protection_path=default_protection,
                         enforce=False, geometry_confirmed=False, rate_hz=50.0,
-                        stop_clearance_m=0.01, resume_clearance_m=0.04,
+                        stop_clearance_m=0.01, resume_clearance_m=0.02,
                         feedback_timeout_s=0.15, target_timeout_s=0.15,
                         max_arm_skew_s=0.05, path_step_rad=0.02,
                         max_path_samples=100, link_samples=0,
@@ -55,19 +57,25 @@ class CollisionGuard(Node):
         self.lock = Interlock(c["stop_clearance_m"], c["resume_clearance_m"],
                               c["feedback_timeout_s"], c["max_arm_skew_s"])
         self.feedback, self.targets = {}, {}
+        self.last_feedback_errors = {}
         self.feedback_times, self.target_times = {}, {}
         self.hold = None
         self.last_clearance = None
         self.started = time.monotonic()
+        self.last_persisted_stop = None
+        self.last_raw_feedback = {}
+        self.recorder = Recorder(self)
+        self.last_diagnostic_sample = 0.
         self.subscriptions_held = []
         qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE)
+        feedback_qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
                              reliability=ReliabilityPolicy.RELIABLE)
         self.outputs = {}
         for side in ("left", "right"):
             self.subscriptions_held.append(self.create_subscription(
                 JointState, f"/joint_states_{side}",
-                lambda msg, s=side: self.receive(msg, s, False), qos))
+                lambda msg, s=side: self.receive(msg, s, False), feedback_qos))
             self.subscriptions_held.append(self.create_subscription(
                 JointState, f"/teleop/{side}_target",
                 lambda msg, s=side: self.receive(msg, s, True), qos))
@@ -80,8 +88,24 @@ class CollisionGuard(Node):
         self.reset_srv = self.create_service(Trigger, "/collision_guard/reset", self.reset)
         self.timer = self.create_timer(1.0/c["rate_hz"], self.tick)
         self.get_logger().info("ENFORCE: position-command gate active" if c["enforce"] else "MONITOR: no robot commands will be published")
+        self.get_logger().info('guard_model: '+json.dumps({
+            'urdf': c['urdf_path'],
+            'urdf_sha256': hashlib.sha256(Path(c['urdf_path']).read_bytes()).hexdigest(),
+            'protection_sha256': hashlib.sha256(Path(c['protection_path']).read_bytes()).hexdigest(),
+            'driver_speed_ratio': c['driver_speed_ratio'],
+        }))
+        self.recorder.event('startup', {'configuration': self.cfg,
+            'urdf_sha256': hashlib.sha256(Path(c['urdf_path']).read_bytes()).hexdigest(),
+            'protection_sha256': hashlib.sha256(Path(c['protection_path']).read_bytes()).hexdigest()})
 
     def receive(self, msg, side, target):
+        if not target:
+            self.last_raw_feedback[side] = {
+                'name': list(msg.name),
+                'position': [float(x) if math.isfinite(x) else None for x in msg.position],
+                'stamp_sec': msg.header.stamp.sec,
+                'stamp_nanosec': msg.header.stamp.nanosec,
+            }
         states = self.targets if target else self.feedback
         times = self.target_times if target else self.feedback_times
         try:
@@ -90,17 +114,23 @@ class CollisionGuard(Node):
             timeout = self.cfg["target_timeout_s" if target else "feedback_timeout_s"]
             if stamp <= 0 or not -0.05 <= age <= timeout:
                 raise ValueError("missing, future or stale source timestamp")
-            state = arm_state(msg.name, msg.position, side, self.fk.max_opening[side])
+            state = arm_state(msg.name, msg.position, side, self.fk.max_opening[side], feedback=not target)
             # Validate this arm's model limits without inventing the other arm's state.
             indices = self.fk.slots[side]
-            if np.any(state[0] < self.fk.model.lowerPositionLimit[indices]) or np.any(state[0] > self.fk.model.upperPositionLimit[indices]):
-                raise ValueError("joint angle outside URDF bounds")
+            if target:
+                if np.any(state[0] < self.fk.model.lowerPositionLimit[indices]) or np.any(state[0] > self.fk.model.upperPositionLimit[indices]):
+                    raise ValueError("joint angle outside URDF bounds")
+            else:
+                state = (normalize_feedback_joints(state[0], self.fk.model.lowerPositionLimit[indices],
+                                                  self.fk.model.upperPositionLimit[indices]), state[1])
             # Map source time to the monotonic clock, so queued old samples
             # do not become fresh merely because their callbacks ran now.
             states[side], times[side] = state, time.monotonic() - max(age, 0.0)
         except (ValueError, TypeError, OverflowError) as error:
             states.pop(side, None)
             times.pop(side, None)
+            if not target:
+                self.last_feedback_errors[side] = str(error)
             self.lock.trip(f"invalid_{'target' if target else 'feedback'}_{side}: {error}")
 
     def target_fresh(self, now):
@@ -116,6 +146,9 @@ class CollisionGuard(Node):
         if fresh:
             distance = self.fk.clearance(self.feedback["left"][0], self.feedback["right"][0]).distance
         response.success = self.lock.reset(distance, fresh)
+        self.get_logger().info(f'guard_reset: success={response.success}, fresh={fresh}, clearance_m={distance}')
+        self.recorder.event('reset', {'success': response.success, 'fresh': fresh,
+                                     'clearance_m': distance if math.isfinite(distance) else None})
         response.message = "Reset; both arms need new target messages" if response.success else "Reset refused: feedback stale or arms below resume distance"
         if response.success:
             self.targets.clear()
@@ -183,7 +216,7 @@ class CollisionGuard(Node):
                     self.lock.trip("target_timeout_or_arm_skew")
             # Other publishers can bypass this node; refuse our own forwarding
             # when detected. This check is diagnostic, not access control.
-            if self.cfg["enforce"] and any(self.count_publishers(f"/joint_ctrl_cmd_{s}") > 1 for s in ("left", "right")):
+            if self.cfg["enforce"] and any(self.count_publishers(self.outputs[s].topic_name) > 1 for s in ("left", "right")):
                 self.lock.trip("another_driver_command_publisher")
                 can_forward = False
             if self.cfg["enforce"] and fresh:
@@ -207,6 +240,30 @@ class CollisionGuard(Node):
                        nearest_pair=[clearance.left_name, clearance.right_name] if clearance else None,
                        nearest_xyz_m=[clearance.left_xyz.tolist(), clearance.right_xyz.tolist()] if clearance else None,
                        path_minimum_clearance_m=path_distance)
+        payload["first_stop_reason"] = self.lock.first_stop_reason
+        payload["last_feedback_errors"] = self.last_feedback_errors
+        event = (self.lock.latched, self.lock.first_stop_reason)
+        if event != self.last_persisted_stop:
+            snapshot = dict(payload)
+            snapshot['feedback_raw'] = self.last_raw_feedback
+            snapshot['targets'] = {s: {'joint_rad': q.tolist(), 'opening_m': g}
+                                   for s, (q, g) in self.targets.items()}
+            line = 'guard_event: '+json.dumps(snapshot, allow_nan=False)
+            if self.lock.latched:
+                self.get_logger().error(line)
+            else:
+                self.get_logger().info(line)
+            self.last_persisted_stop = event
+            self.recorder.event('stop_transition' if self.lock.latched else 'unlock_transition', snapshot)
+        if now-self.last_diagnostic_sample >= .05:
+            snapshot = dict(payload)
+            snapshot['feedback_raw'] = self.last_raw_feedback
+            snapshot['targets'] = {s: {'joint_rad': q.tolist(), 'opening_m': g}
+                                   for s, (q, g) in self.targets.items()}
+            snapshot['feedback_age_s'] = {s: now-t for s, t in self.feedback_times.items()}
+            snapshot['target_age_s'] = {s: now-t for s, t in self.target_times.items()}
+            self.recorder.event('sample', snapshot)
+            self.last_diagnostic_sample = now
         self.status_pub.publish(String(data=json.dumps(payload, allow_nan=False)))
 
 

@@ -100,3 +100,40 @@ def test_path_checks_midpoints_even_when_endpoints_are_clear():
     assert fk.clearance(first, right).distance == 1
     assert fk.clearance(last, right).distance == 1
     assert fk.path_clearance(first, right, last, right, .1, 30).distance == pytest.approx(0.)
+
+
+def test_feedback_boundary_normalization_is_tiny_and_does_not_change_target_validation():
+    from piper_collision_guard.distance import normalize_feedback_joints
+    lo=np.array([0.,-1.]);hi=np.array([1.,0.])
+    np.testing.assert_array_equal(normalize_feedback_joints([-1e-5,1e-5],lo,hi),[0.,0.])
+    np.testing.assert_array_equal(normalize_feedback_joints(np.deg2rad([0., .025986157]),lo,hi), [0.,0.])
+    with pytest.raises(ValueError,match="0.05 degree"):
+        normalize_feedback_joints(np.deg2rad([-.10,0.]),lo,hi)
+    with pytest.raises(ValueError):
+        normalize_feedback_joints([float('nan'),0],lo,hi)
+
+
+def test_closed_gripper_encoder_offset_is_measurement_only():
+    names=[f'joint{i}' for i in range(1,7)]+['gripper']
+    for opening in (-.0002, -.00025):
+        _, measured=arm_state(names,[0.]*6+[opening],'right',.1,feedback=True)
+        assert measured==0.
+        with pytest.raises(ValueError,match='opening='):
+            arm_state(names,[0.]*6+[opening],'right',.1)
+    for opening in (-.000251,.100001):
+        with pytest.raises(ValueError):
+            arm_state(names,[0.]*6+[opening],'right',.1,feedback=True)
+
+
+def test_observed_j5_boundary_feedback_and_larger_deviations():
+    from piper_collision_guard.distance import normalize_feedback_joints
+    lo=np.deg2rad([-150,0,-170,-100,-70,-120])
+    hi=np.deg2rad([150,180,0,100,70,120])
+    for j5 in (-70.087,-70.054,-70.073,-70.149,70.149):
+        q=np.deg2rad([0,90,0,0,j5,0])
+        out=normalize_feedback_joints(q,lo,hi)
+        assert out[4]==pytest.approx(np.deg2rad(np.clip(j5,-70,70)))
+    for joint,value in ((4,-70.151),(4,70.151),(2,.087),(1,-.087)):
+        q=np.deg2rad([0,90,0,0,-70,0]);q[joint]=np.deg2rad(value)
+        with pytest.raises(ValueError,match='tolerance='):
+            normalize_feedback_joints(q,lo,hi)

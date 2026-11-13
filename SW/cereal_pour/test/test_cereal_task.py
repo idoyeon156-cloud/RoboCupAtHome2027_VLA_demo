@@ -16,6 +16,22 @@ from piper_collision_guard.cereal_timeline import Timeline
 def settings():return yaml.safe_load((ROOT/'config/cereal_task.yaml').read_text())
 
 
+def test_alpha_rate_caps_keep_the_requested_goal_and_normal_task_rates():
+    from piper_collision_guard.cereal_pour import step_rates
+    rates=np.r_[[np.deg2rad(15.)]*6,.02]
+    goal=np.tile(np.r_[np.deg2rad([0,90,0,0,-70,0]),0.],(2,1))
+    far=np.zeros((2,7))
+    near=goal.copy();near[:,1]-=np.deg2rad(4.);near[:,4]+=np.deg2rad(3.)
+    original=goal.copy()
+    for name in ('alpha','return_alpha'):
+        np.testing.assert_array_equal(step_rates(name,far,goal,rates),rates)
+        slow=step_rates(name,near,goal,rates)
+        assert slow[4]==pytest.approx(np.deg2rad(1.))
+        np.testing.assert_array_equal(slow[[0,1,2,3,5,6]],rates[[0,1,2,3,5,6]])
+    np.testing.assert_array_equal(step_rates('bowl_pregrasp',near,goal,rates),rates)
+    np.testing.assert_array_equal(goal,original)
+
+
 def test_bottom_centre_offsets_and_position_updates_are_used():
     spec=settings();obj=object_definitions(spec)
     np.testing.assert_allclose(obj['bowl']['grasp_world_m'],np.array(spec['bowl']['bottom_center_world_m'])+[0,.085,.035])

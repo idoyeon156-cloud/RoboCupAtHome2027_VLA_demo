@@ -9,7 +9,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from piper_collision_guard.collision_model import load_model
+from piper_collision_guard.collision_model import load_model, load_semantic
 
 
 def demo_nodes(context):
@@ -25,11 +25,8 @@ def demo_nodes(context):
     remaps = [('joint_states', '/moveit_guard/demo_joint_states'),
               ('robot_description', '/moveit_box_demo/robot_description')]
     if LaunchConfiguration('cereal').perform(context).lower() == 'true':
-        sequence_path = LaunchConfiguration('sequence_path').perform(context)
-        playback = [Node(package='piper_collision_guard', executable='cereal_preview',
-                         prefix=shlex.quote(python), output='screen',
-                         parameters=[{'sequence_path': sequence_path}] if sequence_path else [],
-                         remappings=remaps)]
+        raise ValueError('Legacy timeline cereal playback is disabled. Use bash run_cereal_rviz.sh '
+                         'for MoveIt planning and both enforce guards.')
     else:
         playback = [
             Node(package='piper_collision_guard', executable='collision_degree_sliders',
@@ -45,7 +42,7 @@ def demo_nodes(context):
              remappings=[('joint_states','/moveit_guard/demo_joint_states')]),
         Node(package='piper_moveit_guard', executable='moveit_guard', output='screen',
              parameters=[{'robot_description': description,
-                          'robot_description_semantic': (share/'config/dual_piper.srdf').read_text(),
+                          'robot_description_semantic': load_semantic(share, description),
                           'demo': True, 'convex_meshes': mesh_mode}]),
         Node(package='piper_collision_guard', executable='moveit_box_editor',
              prefix=shlex.quote(python), output='screen',

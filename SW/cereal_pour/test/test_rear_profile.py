@@ -62,3 +62,19 @@ def test_both_arms_check_post_and_preview_holds_unsafe_pose():
     preview.update(list(values),list(values.values()))
     assert preview.blocked and preview.clearance().right_name.startswith('rear_profile_3030')
     np.testing.assert_array_equal(preview.accepted,initial)
+
+
+def test_reset_distance_is_reachable_at_home_and_alpha_without_changing_stop():
+    from piper_collision_guard.distance import Interlock
+    cfg=yaml.safe_load((ROOT/'config/robot.yaml').read_text())['joint_distance']
+    assert cfg['stop_clearance_m']==pytest.approx(.01)
+    p=yaml.safe_load((ROOT/'piper_collision_guard/config/protection.yaml').read_text())
+    model=DistanceModel(URDF,0,p)
+    for pose in (np.zeros(6),np.deg2rad([0,90,0,0,-70,0])):
+        gap=model.clearance(pose,pose).distance
+        lock=Interlock(cfg['stop_clearance_m'],cfg['resume_clearance_m'],.15,.05)
+        lock.trip('feedback_timeout_or_arm_skew')
+        assert not lock.reset(gap,False)
+        assert lock.reset(gap,True)
+        lock.trip('distance_stop')
+        assert not lock.reset(cfg['stop_clearance_m'],True)

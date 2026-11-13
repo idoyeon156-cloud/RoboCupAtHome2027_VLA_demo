@@ -35,30 +35,6 @@ for arg in "$@"; do
   esac
 done
 python3 tools/prepare_model.py --check
-# Default continuous playback is regenerated from object settings when needed.
-# Explicit sequence_path remains available for legacy or separately generated paths.
-if [[ "$mode" == meshes_demo || "$mode" == meshes_real ]]; then
-  cereal_requested=false
-  custom_sequence=false
-  task_config="$variant_root/config/cereal_task.yaml"
-  launch_args=()
-  for arg in "$@"; do
-    case "$arg" in
-      cereal:=true) cereal_requested=true; launch_args+=("$arg") ;;
-      sequence_path:=*) custom_sequence=true; launch_args+=("$arg") ;;
-      task_config:=*) task_config="${arg#task_config:=}" ;;
-      *) launch_args+=("$arg") ;;
-    esac
-  done
-  set -- "${launch_args[@]}"
-  if [[ "$cereal_requested" == true && "$custom_sequence" == false ]]; then
-    sequence="$variant_root/model/cereal_task_sequence.yaml"
-    if ! python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence" --check; then
-      python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence"
-    fi
-    set -- "$@" "sequence_path:=$sequence"
-  fi
-fi
 # Explicit paths exclude the sibling legacy workspace, even when launched from another directory.
 python3 /usr/bin/colcon build --symlink-install --base-paths \
   piper_dual_description piper_collision_guard piper_moveit_guard \
@@ -67,9 +43,54 @@ python3 /usr/bin/colcon build --symlink-install --base-paths \
 export COLCON_PYTHON_EXECUTABLE=/usr/bin/python3
 source "$variant_root/install/setup.bash"
 export ROS_LOG_DIR="${ROS_LOG_DIR:-$variant_root/log/$mode}"
+export CEREAL_RUN_ID="${CEREAL_RUN_ID:-$(date +%Y-%m-%d_%H-%M-%S)_$$}"
 if [[ "$mode" == *_demo ]]; then
   export ROS_DOMAIN_ID="${COLLISION_DEMO_DOMAIN_ID:-178}"
   export ROS_LOCALHOST_ONLY=1
+fi
+export CEREAL_PACKAGE_ROOT="$variant_root"
+# Planning requires the newly built native MoveIt executable. No hardware is launched.
+# Guarded cereal simulation accepts MoveIt plans only.
+# Hardware replay must use the completed immutable simulation snapshot.
+if [[ "$mode" == meshes_demo || "$mode" == meshes_real ]]; then
+  cereal_requested=false
+  custom_sequence=false
+  arms_only=false
+  planner_args=()
+  task_config="$variant_root/config/cereal_task.yaml"
+  launch_args=()
+  for arg in "$@"; do
+    case "$arg" in
+      arms_only:=true) arms_only=true; planner_args+=(--arms-only); launch_args+=("$arg") ;;
+      arms_only:=false) launch_args+=("$arg") ;;
+      cereal:=true) cereal_requested=true; if [[ "$mode" == meshes_real ]]; then launch_args+=("$arg"); fi ;;
+      sequence_path:=*) custom_sequence=true; launch_args+=("$arg") ;;
+      task_config:=*) task_config="${arg#task_config:=}" ;;
+      *) launch_args+=("$arg") ;;
+    esac
+  done
+  set -- "${launch_args[@]}"
+  if [[ "$cereal_requested" == true ]]; then
+    if [[ "$mode" == meshes_demo ]]; then
+      launch_file=cereal_guarded_rviz.launch.py
+    elif [[ -f "$variant_root/REAL_MOTION_HOLD_KO.md" ]]; then
+      echo '실물 실행 차단 중: REAL_MOTION_HOLD_KO.md 참고' >&2
+      exit 1
+    fi
+    if [[ "$custom_sequence" == false ]]; then
+      if [[ "$mode" == meshes_demo ]]; then
+        sequence="$variant_root/model/cereal_task_sequence.yaml"
+        if [[ "$arms_only" == true ]]; then sequence="$variant_root/model/cereal_arms_only_sequence.yaml"; fi
+        if ! python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence" "${planner_args[@]}" --check; then
+          echo 'MoveIt으로 전체 경로를 계획합니다. 실패하면 RViz 동작을 시작하지 않습니다.'
+          python3 tools/plan_cereal_task.py --config "$task_config" --output "$sequence" "${planner_args[@]}"
+        fi
+      else
+        sequence="$(python3 -c 'from piper_collision_guard.plan_snapshot import completed_sequence; print(completed_sequence())')"
+      fi
+      set -- "$@" "sequence_path:=$sequence"
+    fi
+  fi
 fi
 # Real modes preserve networking/domain and do not start hardware drivers.
 exec ros2 launch "$package" "$launch_file" "$@"

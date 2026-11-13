@@ -25,9 +25,18 @@ RViz 시뮬은 하나씩 실행합니다. 실물용 기본값은 감시 모드�
 
 | 배포본 | 실행 |
 | --- | --- |
-| [시뮬레이션 ZIP](cereal_pour/dual_piper_cereal_pour_rviz.zip) | `bash run_cereal_rviz.sh` |
-| [실물 배포 ZIP](cereal_pour/dual_piper_cereal_pour_real.zip) | `bash run_cereal_real.sh` |
+| [시뮬레이션 ZIP](cereal_pour/dual_piper_cereal_pour_rviz.zip) | `bash run_cereal_rviz.sh arms_only:=true` |
+| [실물 배포 ZIP](cereal_pour/dual_piper_cereal_pour_real.zip) | `bash run_cereal_real.sh enforce:=true geometry_confirmed:=true arms_only:=true` |
 
-실물용은 조인트 거리 → MoveIt 메시 가드를 사용하며 기본 monitor입니다. 물체 위치·크기는 `config/cereal_task.yaml`에서 수정합니다. 시작 서비스와 검증 범위는 [CEREAL_TASK.md](../cereal_pour/CEREAL_TASK.md)를 참고하세요.
+2026-11-13 최신 소스를 반영한 배포입니다. **그리퍼 제외 팔 전용 모드에서 실물 전체 시퀀스·제로 복귀**를 확인했습니다.
+속도와 끊김·지터링을 일부 개선했으며, 잔여 떨림과 그리퍼 미개방은 조사 중입니다.
+실물용은 조인트 거리 → MoveIt 메시 가드를 사용합니다. 위 명령은 두 가드를 enforce로 실행합니다.
+
+**안전상 먼저 동일 작업 폴더에서 시뮬레이션을 끝까지 완료해야 실물 구동이 가능합니다.
+향후 안정화되면 시뮬레이션 없이 실행할 수 있도록 변경할 예정이며, 현재는 선행 조건을 유지합니다.**
+실물 ZIP을 푼 폴더에서도 먼저 `bash run_cereal_rviz.sh arms_only:=true`로 완료합니다.
+다른 ZIP/작업 폴더의 완료 기록을 복사하지 않습니다. 로컬 완료 인증 기록·빌드·실행 로그는 ZIP에 포함하지 않습니다.
+두 ZIP은 같은 실행 소스를 포함하며 드라이버는 별도 설치가 필요합니다.
+터미널별 실행과 확인 범위는 [현재 배포 안내](../cereal_pour/README.md)를 참고하세요.
 
 재생성: `SW/cereal_pour`에서 `python tools/package_configurable.py --cereal`.

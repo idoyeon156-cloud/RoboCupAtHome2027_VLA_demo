@@ -6,3 +6,7 @@ log/
 .venv
 .pytest_cache/
 *.egg-info/
+SW/cereal_pour/model/simulation_sessions/
+SW/cereal_pour/model/last_completed_simulation.json
+SW/cereal_pour/analysis/
+SW/bundles/cereal_pour_review_20261113/

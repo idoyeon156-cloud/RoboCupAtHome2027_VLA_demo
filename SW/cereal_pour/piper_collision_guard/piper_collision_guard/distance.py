@@ -7,7 +7,40 @@ import pinocchio as pin
 from scipy.spatial import cKDTree
 
 
-def arm_state(names, positions, side, max_opening_m=0.07):
+
+# Measurement-only boundary normalization. Targets retain strict URDF limits.
+# Live samples included J3=+0.025986 degrees at a commanded zero.
+# J5 at the -70 degree alpha target produced -70.087 degree feedback.
+# Accept up to 0.15 degree on measured J5 only; other joints stay at 0.05.
+# This is an operational tolerance, not a certified encoder accuracy.
+# Planned targets and the URDF limits are unchanged.
+FEEDBACK_BOUNDARY_TOLERANCE_RAD = math.radians(0.05)
+J5_FEEDBACK_BOUNDARY_TOLERANCE_RAD = math.radians(0.15)
+# Observed closed encoder: -0.2 mm. Measurement-only zero normalization;
+# commands and the upper opening limit stay strict.
+FEEDBACK_CLOSED_OPENING_TOLERANCE_M = .00025
+
+
+def normalize_feedback_joints(values, lower, upper):
+    values = np.asarray(values, dtype=float)
+    lower, upper = np.asarray(lower), np.asarray(upper)
+    if values.shape != lower.shape or lower.shape != upper.shape or not np.isfinite(values).all():
+        raise ValueError('invalid joint feedback shape or non-finite value')
+    tolerance = np.full(values.shape, FEEDBACK_BOUNDARY_TOLERANCE_RAD)
+    if values.shape == (6,):
+        tolerance[4] = J5_FEEDBACK_BOUNDARY_TOLERANCE_RAD
+    bad = np.flatnonzero((values < lower - tolerance) | (values > upper + tolerance))
+    if bad.size:
+        details = '; '.join(f'J{i+1}={math.degrees(values[i]):.6f}deg '
+                            f'limits=[{math.degrees(lower[i]):.6f},{math.degrees(upper[i]):.6f}]deg '
+                            f'excess={math.degrees(max(lower[i]-values[i], values[i]-upper[i])):.6f}deg '
+                            f'tolerance={math.degrees(tolerance[i]):.2f} degree'
+                            for i in bad)
+        raise ValueError('joint feedback outside URDF bounds beyond measurement tolerance: '+details)
+    return np.clip(values, lower, upper)
+
+
+def arm_state(names, positions, side, max_opening_m=0.07, *, feedback=False):
     """Read six named arm joints and Piper's full gripper opening in metres.
 
     Do not assume JointState array order. Both arms use the same unprefixed
@@ -28,8 +61,10 @@ def arm_state(names, positions, side, max_opening_m=0.07):
     if len(matches) != 1:
         raise ValueError("one full-opening gripper value is required (Piper driver convention)")
     opening = float(values[matches[0]])
+    if feedback and -FEEDBACK_CLOSED_OPENING_TOLERANCE_M <= opening < 0:
+        opening = 0.
     if not math.isfinite(max_opening_m) or max_opening_m <= 0 or not 0 <= opening <= max_opening_m:
-        raise ValueError(f"gripper opening must be in [0, {max_opening_m}] metres")
+        raise ValueError(f"gripper opening={opening*1000:.6f}mm must be in [0, {max_opening_m*1000}]mm")
     return np.asarray(q), opening
 
 
@@ -253,8 +288,11 @@ class Interlock:
         self.stop, self.resume, self.timeout, self.max_skew = stop, resume, timeout, max_skew
         self.latched = False
         self.reason = "waiting_for_feedback"
+        self.first_stop_reason = ""
 
     def trip(self, reason):
+        if not self.latched:
+            self.first_stop_reason = reason
         self.latched, self.reason = True, reason
 
     def fresh(self, timestamps, now):
@@ -271,4 +309,5 @@ class Interlock:
         if not fresh or not math.isfinite(distance) or distance <= self.resume:
             return False
         self.latched, self.reason = False, "ready"
+        self.first_stop_reason = ""
         return True

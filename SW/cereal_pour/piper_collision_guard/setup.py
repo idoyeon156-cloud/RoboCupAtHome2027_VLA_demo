@@ -23,6 +23,7 @@ setup(
         "collision_guard = piper_collision_guard.node:main",
         "cereal_pour = piper_collision_guard.cereal_pour:main",
         "cereal_preview = piper_collision_guard.cereal_preview:main",
+        "cereal_simulated_driver = piper_collision_guard.simulation_driver:main",
         "collision_limit_visual_demo = piper_collision_guard.preview:main",
     ]},
 )
