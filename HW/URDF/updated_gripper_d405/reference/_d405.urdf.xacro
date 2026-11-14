@@ -37,8 +37,8 @@ aluminum peripherial evaluation case.
     <xacro:property name="d405_cam_depth_to_color_offset" value="0.0"/>
 
     <!-- The following values model the aluminum peripherial case for the
-  	d405 camera, with the camera joint represented by the actual
-  	peripherial camera tripod mount -->
+    d405 camera, with the camera joint represented by the actual
+    peripherial camera tripod mount -->
     <xacro:property name="d405_cam_width" value="0.042"/>
     <xacro:property name="d405_cam_height" value="0.042"/>
     <xacro:property name="d405_mass" value="0.058"/>
@@ -52,7 +52,7 @@ aluminum peripherial evaluation case.
     <xacro:property name="d405_mesh_x_offset" value="${d405_cam_mount_from_center_offset-d405_glass_to_front-d405_zero_depth_to_glass}"/>
 
     <!-- The following offset is relative to the physical d405 camera peripherial
-  	camera tripod mount -->
+    camera tripod mount -->
     <xacro:property name="d405_cam_depth_px" value="${d405_cam_mount_from_center_offset}"/>
     <xacro:property name="d405_cam_depth_py" value="0.009"/>
     <xacro:property name="d405_cam_depth_pz" value="${d405_cam_height/2}"/>
@@ -76,7 +76,7 @@ aluminum peripherial evaluation case.
         <!-- the mesh origin is at front plate in between the two infrared camera axes -->
         <origin xyz="${d405_zero_depth_to_glass + d405_glass_to_front} ${-d405_cam_depth_py} 0" rpy="${M_PI/2} 0 ${M_PI/2}"/>
         <geometry>
-	        <mesh filename="package://realsense2_description/meshes/d405.stl" scale="0.001 0.001 0.001" />
+            <mesh filename="package://realsense2_description/meshes/d405.stl" scale="0.001 0.001 0.001" />
         </geometry>
         <material name="aluminum"/>
       </visual>
