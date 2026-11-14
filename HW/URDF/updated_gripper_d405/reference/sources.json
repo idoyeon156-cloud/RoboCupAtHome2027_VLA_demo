@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/IntelRealSense/realsense-ros",
+  "commit": "489265d328e9011efc83c6ee405abfadccc24e36",
+  "camera_mesh_sha256": "a248f41149d12b28311829feecbe7a80cf1481fd05e0f5df2c4c7ecd556edd48",
+  "base_urdf_sha256": "51e84b0a0aad45ab20555aea8d9be01de799eb4180994f7635fd63d544e5e226",
+  "camera_link_in_mount_H_m": [
+    0,
+    0.052243,
+    0.072337
+  ],
+  "camera_link_rpy_in_mount_H_rad": [
+    0.0,
+    0.35953782591083194,
+    1.5707963267948966
+  ],
+  "tilt_deg": 20.6
+}

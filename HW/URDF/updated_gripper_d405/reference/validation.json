@@ -1,0 +1,10 @@
+{
+  "check_urdf": "passed",
+  "connected_tree": true,
+  "links": 43,
+  "joints": 42,
+  "original_arm_gripper_mount_elements_unchanged": true,
+  "all_mesh_references_resolve": true,
+  "camera_optical_tcp_matches_mount_cad": true,
+  "physical_fit_or_motion_test": false
+}

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.8)
+project(piper_dual_d405_description)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY urdf meshes reference DESTINATION share/${PROJECT_NAME})
+install(FILES LICENSE LICENSE.realsense README.md DESTINATION share/${PROJECT_NAME})
+ament_package()
